@@ -464,10 +464,34 @@
     body.frame .omr-foot,
     body.frame .omr-head { display: none !important; }
 
-    /* 릴스는 아래쪽 약 15%에 계정 이름 · 설명 글이 겹치므로 내용을 위로 모은다 */
-    body.frame .wrap { max-width: none; padding: 0 20px; }
+    /* 릴스 안전 영역: 위(릴스 글자 · 카메라) 125px, 아래(계정 · 설명 글) 200px,
+       오른쪽(좋아요 · 댓글 버튼) 80px, 왼쪽 30px을 비운다 (540×960 기준, 영상은 2배).
+       내용은 너비 470px로 그린 뒤 이 영역에 맞게 줄인다 (fitFrame) */
+    body.frame .wrap {
+      position: absolute;
+      top: 125px;
+      left: 30px;
+      width: 470px;
+      max-width: none;
+      padding: 0;
+      transform-origin: top left;
+      transform: scale(var(--fs, 1));
+    }
+
+    body.frame .frame-brand {
+      display: block;
+      position: absolute;
+      top: 78px;
+      left: 30px;
+      right: 80px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.85rem;
+      font-weight: 700;
+    }
     body.frame .layout { grid-template-columns: 1fr; gap: 10px; }
-    body.frame .frame-hook { text-align: center; padding: 24px 0 12px; }
+    body.frame .frame-hook { text-align: center; padding: 0 0 12px; }
+    .frame-brand { display: none; }
 
     .frame-hook .tag {
       display: inline-block;
@@ -486,8 +510,9 @@
     body.frame .booklet h2 { margin-bottom: 4px; }
     body.frame .clue { padding: 2px 6px; font-size: 1rem; }
     body.frame .omr { max-width: none; box-shadow: none; }
-    body.frame .bubble { height: 35px; }
-    body.frame .ell { width: 18px; height: 29px; font-size: 10px; }
+    body.frame .bubble { height: 30px; }
+    body.frame .ell { width: 16px; height: 25px; font-size: 9px; }
+    body.frame .qno { font-size: 0.95rem; }
 
     body.frame .frame-cta { text-align: center; margin-top: 12px; }
     .frame-timer { height: 8px; margin: 0 0 12px; border-radius: 999px; background: #e6dfd0; overflow: hidden; }
@@ -520,6 +545,8 @@
     <h1>마킹 탐정</h1>
     <a href="#how">설명</a>
   </nav>
+
+  <div class="frame-brand" aria-hidden="true">오늘의 AI 작품 · 마킹 탐정</div>
 
   <div class="wrap">
     <!-- 영상 녹화용 머리글 (?frame 일 때만 보임) -->
@@ -1590,6 +1617,7 @@
         $('busy').hidden = true;
         if (isFrame) {
           renderTimer();
+          fitFrame();
         } else if (S.finished) {
           drawGrades(false);
           showResult(false);
@@ -1600,6 +1628,21 @@
         document.body.dataset.ready = '1';
       }, 30);
     }
+
+    // 영상 화면: 내용 전체를 안전 영역(430×635)에 들어가게 줄이고 가운데로
+    const SAFE = { left: 30, top: 125, width: 430, height: 635 };
+    function fitFrame() {
+      const wrap = document.querySelector('.wrap');
+      wrap.style.setProperty('--fs', 1);
+      const w = wrap.offsetWidth;
+      const h = wrap.scrollHeight;
+      const s = Math.min(SAFE.width / w, SAFE.height / h, 1);
+      wrap.style.setProperty('--fs', s.toFixed(4));
+      wrap.style.left = `${SAFE.left + (SAFE.width - w * s) / 2}px`;
+      wrap.style.top = `${SAFE.top + (SAFE.height - h * s) / 2}px`;
+      return { scale: s, width: w * s, height: h * s };
+    }
+    window.__fitFrame = fitFrame;
 
     // 도전 퍼즐에서 다른 모드로 가면 주소의 ?c= 를 지운다
     function leaveChallenge() {
