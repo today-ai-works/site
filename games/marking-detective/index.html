@@ -645,7 +645,7 @@
 
   <div id="toast" role="status" aria-live="polite"></div>
 
-  <script src="/games/marking-detective/challenges.js"></script>
+  <script src="/assets/challenges.js"></script>
   <script>
   (() => {
     'use strict';
@@ -660,8 +660,10 @@
       normal: { n: 8, name: '보통' },
       hard: { n: 10, name: '어려움' },
     };
-    // 도전 퍼즐: 인스타 영상에 올린 문제. 목록은 challenges.js (도전 모음 페이지와 같이 쓴다)
-    const CHALLENGES = window.MD_CHALLENGES || {};
+    // 도전 퍼즐: 인스타 영상에 올린 문제. 목록은 사이트 공통 /assets/challenges.js 중 이 게임 것만
+    const CHALLENGES = Object.fromEntries((window.TAW_CHALLENGES || [])
+      .filter((c) => c.puzzle && c.puzzle.gameKey === GAME_KEY)
+      .map((c) => [c.no, c.puzzle]));
     const params = new URLSearchParams(location.search);
     const challengeNo = CHALLENGES[Number(params.get('c'))] ? Number(params.get('c')) : 0;
     const isFrame = params.has('frame'); // 영상 녹화용 9:16 화면

@@ -22,14 +22,14 @@
   </header>
 
   <main class="wrap">
-    <!-- 영상 속 최신 도전 문제 (인스타 프로필 링크로 들어온 사람이 가장 먼저 보는 곳). 목록은 challenges.js -->
+    <!-- 영상 속 최신 도전 (인스타 프로필 링크로 들어온 사람이 가장 먼저 보는 곳). 목록은 /assets/challenges.js -->
     <section aria-labelledby="challenge-title" id="challenge-section" hidden>
       <div class="section-title">
-        <h2 id="challenge-title">영상 속 도전 문제</h2>
+        <h2 id="challenge-title">영상 속 도전</h2>
         <a href="/challenge/" style="color:var(--muted);font-size:.9rem;text-decoration:none">지난 도전 보기 →</a>
       </div>
       <a class="challenge-card" id="challenge-card" href="/challenge/">
-        <span class="label">🕵️ 마킹 탐정</span>
+        <span class="label" id="challenge-game">🎮</span>
         <span class="no" id="challenge-no">도전</span>
         <span class="meta" id="challenge-meta"></span>
         <span class="go">도전하기 →</span>
@@ -73,18 +73,18 @@
     <div>© 2026 오늘의 AI 작품</div>
   </footer>
 
-  <script src="/games/marking-detective/challenges.js"></script>
+  <script src="/assets/challenges.js"></script>
   <script>
-    // 가장 최근 도전 문제를 홈 맨 위 카드에 넣는다
+    // 가장 최근 도전(가장 큰 번호)을 홈 맨 위 카드에 넣는다
     (() => {
-      const list = Object.entries(window.MD_CHALLENGES || {}).map(([no, c]) => ({ no: Number(no), ...c }));
+      const list = (window.TAW_CHALLENGES || []).slice().sort((a, b) => b.no - a.no);
       if (!list.length) return;
-      const latest = list.sort((a, b) => b.no - a.no)[0];
-      const names = { easy: '쉬움 6문항', normal: '보통 8문항', hard: '어려움 10문항' };
+      const latest = list[0];
       const [, m, d] = (latest.date || '').split('-').map(Number);
-      document.getElementById('challenge-card').href = `/games/marking-detective/?c=${latest.no}`;
+      document.getElementById('challenge-card').href = latest.url;
+      document.getElementById('challenge-game').textContent = `🎮 ${latest.game}`;
       document.getElementById('challenge-no').textContent = `도전 #${latest.no}`;
-      document.getElementById('challenge-meta').textContent = `${names[latest.level] || ''}${m ? ` · ${m}월 ${d}일 영상` : ''} · 찍지 않고 다 맞힐 수 있을까?`;
+      document.getElementById('challenge-meta').textContent = [latest.desc, m ? `${m}월 ${d}일 영상` : ''].filter(Boolean).join(' · ');
       document.getElementById('challenge-section').hidden = false;
     })();
   </script>
