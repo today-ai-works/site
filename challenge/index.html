@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>영상 속 도전 문제 — 오늘의 AI 작품</title>
+  <meta name="description" content="인스타그램 @today_ai_works 영상에 나온 도전 문제를 직접 풀어 보는 곳. 영상에 적힌 번호를 눌러 시작하세요.">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="영상 속 도전 문제 — 오늘의 AI 작품">
+  <meta property="og:description" content="영상에서 본 그 문제, 번호를 눌러 바로 도전.">
+  <meta property="og:url" content="https://today-ai-works.pages.dev/challenge/">
+  <link rel="canonical" href="https://today-ai-works.pages.dev/challenge/">
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+  <link rel="stylesheet" href="/assets/site.css">
+  <style>
+    /* 도전 목록: 최신 문제는 크게, 지난 문제는 번호 버튼으로 */
+    .latest {
+      display: block;
+      padding: 22px 20px;
+      border-radius: var(--radius);
+      background: #e0475b;
+      color: #fff;
+      text-decoration: none;
+      box-shadow: var(--shadow);
+      transition: transform 0.15s ease;
+    }
+
+    .latest:hover { transform: translateY(-2px); }
+    .latest .label { font-size: 0.85rem; font-weight: 700; opacity: 0.85; }
+    .latest .no { font-size: 2.4rem; font-weight: 900; line-height: 1.15; margin: 2px 0 6px; }
+    .latest .meta { font-size: 0.9rem; opacity: 0.9; }
+    .latest .go { display: inline-block; margin-top: 14px; padding: 9px 18px; border-radius: 999px; background: #fff; color: #c42a40; font-weight: 800; }
+
+    .past {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
+      gap: 10px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .past a {
+      display: block;
+      padding: 14px 8px;
+      border-radius: 14px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      text-align: center;
+      text-decoration: none;
+      font-weight: 800;
+    }
+
+    .past a:hover { border-color: #e0475b; }
+    .past small { display: block; color: var(--muted); font-weight: 500; font-size: 0.78rem; margin-top: 2px; }
+    .status { margin-left: 4px; }
+  </style>
+</head>
+<body>
+  <header class="site-header wrap">
+    <a class="logo" href="/">오늘의 AI 작품</a>
+    <h1>영상 속 그 문제,<br>번호를 눌러 도전하세요</h1>
+    <p>인스타 <a href="https://www.instagram.com/today_ai_works/" target="_blank" rel="noopener">@today_ai_works</a> 영상에 적힌 "도전 #번호"를 찾아 누르면 돼요.</p>
+  </header>
+
+  <main class="wrap">
+    <section aria-labelledby="latest-title">
+      <div class="section-title"><h2 id="latest-title">최신 도전</h2></div>
+      <div id="latest"></div>
+    </section>
+
+    <section aria-labelledby="past-title" id="past-section" hidden>
+      <div class="section-title"><h2 id="past-title">지난 도전</h2><span>영상 번호를 찾아보세요</span></div>
+      <ul class="past" id="past"></ul>
+    </section>
+
+    <section aria-labelledby="more-title">
+      <div class="section-title"><h2 id="more-title">더 풀고 싶다면</h2></div>
+      <p><a href="/games/marking-detective/">마킹 탐정</a>에서 오늘의 퍼즐과 연습 문제를 얼마든지 풀 수 있어요.</p>
+    </section>
+  </main>
+
+  <footer class="site-footer wrap">
+    <nav aria-label="사이트 정보">
+      <a href="/about/">소개</a>
+      <a href="/terms/">이용약관</a>
+      <a href="/privacy/">개인정보처리방침</a>
+      <a href="/contact/">문의</a>
+      <a href="https://www.instagram.com/today_ai_works/" target="_blank" rel="noopener">@today_ai_works</a>
+    </nav>
+    <div>© 2026 오늘의 AI 작품</div>
+  </footer>
+
+  <script src="/games/marking-detective/challenges.js"></script>
+  <script>
+  (() => {
+    'use strict';
+    const LEVEL_NAMES = { easy: '쉬움 6문항', normal: '보통 8문항', hard: '어려움 10문항' };
+    const list = Object.entries(window.MD_CHALLENGES || {})
+      .map(([no, c]) => ({ no: Number(no), ...c }))
+      .sort((a, b) => b.no - a.no);
+    const link = (no) => `/games/marking-detective/?c=${no}`;
+    const dateText = (d) => {
+      const [, m, day] = (d || '').split('-').map(Number);
+      return m ? `${m}월 ${day}일` : '';
+    };
+
+    // 이 브라우저에서 풀어 본 적이 있는지 (기록은 이 기기에만 있음)
+    function statusOf(no) {
+      try {
+        const s = JSON.parse(localStorage.getItem(`taw:marking-detective:challenge:${no}`) || 'null');
+        if (s && s.finished) return '✔';
+        if (s && Array.isArray(s.marks) && s.marks.some(Boolean)) return '…';
+      } catch (e) { /* 저장 공간을 못 써도 목록은 보인다 */ }
+      return '';
+    }
+
+    const latestBox = document.getElementById('latest');
+    if (!list.length) {
+      latestBox.textContent = '첫 도전 문제를 준비하고 있어요.';
+      return;
+    }
+
+    const [latest, ...past] = list;
+    const a = document.createElement('a');
+    a.className = 'latest';
+    a.href = link(latest.no);
+    a.innerHTML = `
+      <div class="label">🕵️ 마킹 탐정</div>
+      <div class="no">도전 #${latest.no}</div>
+      <div class="meta">${LEVEL_NAMES[latest.level] || ''} · ${dateText(latest.date)} 영상</div>
+      <span class="go">${statusOf(latest.no) === '✔' ? '다시 보기' : '도전하기'} →</span>`;
+    latestBox.append(a);
+
+    if (past.length) {
+      document.getElementById('past-section').hidden = false;
+      const ul = document.getElementById('past');
+      for (const c of past) {
+        const li = document.createElement('li');
+        const st = statusOf(c.no);
+        li.innerHTML = `<a href="${link(c.no)}">#${c.no}${st ? `<span class="status">${st}</span>` : ''}<small>${dateText(c.date)}</small></a>`;
+        ul.append(li);
+      }
+    }
+  })();
+  </script>
+</body>
+</html>

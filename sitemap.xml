@@ -2,6 +2,7 @@
 <!-- 새 게임을 올리면 <url> 한 묶음을 추가한다 (README 참고) -->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>https://today-ai-works.pages.dev/</loc></url>
+  <url><loc>https://today-ai-works.pages.dev/challenge/</loc></url>
   <url><loc>https://today-ai-works.pages.dev/games/marking-detective/</loc></url>
   <url><loc>https://today-ai-works.pages.dev/about/</loc></url>
   <url><loc>https://today-ai-works.pages.dev/contact/</loc></url>

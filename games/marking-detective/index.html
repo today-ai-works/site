@@ -550,7 +550,7 @@
       </div>
     </div>
 
-    <p class="challenge-bar" id="challenge-bar" hidden>🕵️ <b>도전 #<span id="challenge-no"></span></b> · 영상 속 바로 그 문제예요. 찍지 말고 추리로!</p>
+    <p class="challenge-bar" id="challenge-bar" hidden>🕵️ <b>도전 #<span id="challenge-no"></span></b> · 영상 속 바로 그 문제예요. 찍지 말고 추리로! <a href="/challenge/">다른 도전 보기</a></p>
 
     <p class="hintbar" id="hintbar" hidden></p>
 
@@ -618,6 +618,7 @@
 
   <div id="toast" role="status" aria-live="polite"></div>
 
+  <script src="/games/marking-detective/challenges.js"></script>
   <script>
   (() => {
     'use strict';
@@ -632,11 +633,8 @@
       normal: { n: 8, name: '보통' },
       hard: { n: 10, name: '어려움' },
     };
-    // 도전 퍼즐: 인스타 영상에 올린 문제. 번호마다 난이도와 시드를 고정한다
-    // (한 번 올린 번호는 바꾸지 않는다. 퍼즐 생성 코드를 바꾸면 같은 시드라도 문제가 달라지니 조심)
-    const CHALLENGES = {
-      1: { level: 'normal', seed: 523 }, // 2026-11-20: 단서 7개, 매 단계 단서 2~3개를 엮어야 풀림
-    };
+    // 도전 퍼즐: 인스타 영상에 올린 문제. 목록은 challenges.js (도전 모음 페이지와 같이 쓴다)
+    const CHALLENGES = window.MD_CHALLENGES || {};
     const params = new URLSearchParams(location.search);
     const challengeNo = CHALLENGES[Number(params.get('c'))] ? Number(params.get('c')) : 0;
     const isFrame = params.has('frame'); // 영상 녹화용 9:16 화면
@@ -1673,6 +1671,7 @@
       $('frame-hook').hidden = false;
       $('frame-cta').hidden = false;
       $('frame-tag').textContent = challengeNo ? `도전 #${challengeNo}` : '도전';
+      if (challengeNo) $('cta-text').innerHTML = `프로필 링크에서 <b>도전 #${challengeNo}</b> 직접 풀기`;
     }
 
     loadPuzzle();
