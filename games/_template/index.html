@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <!-- 견본 게임: 새 게임을 만들 때 이 폴더를 복사해서 시작한다. 공개 목록과 검색에는 나오지 않는다. -->
+  <meta name="robots" content="noindex">
+  <title>10초 연타 — 오늘의 AI 작품</title>
+  <meta name="description" content="10초 동안 최대한 많이 누르는 견본 게임.">
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+  <link rel="stylesheet" href="/assets/site.css">
+  <link rel="stylesheet" href="/assets/game.css">
+</head>
+<body>
+  <header class="game-bar">
+    <a href="/">← 다른 작품</a>
+    <h1>10초 연타</h1>
+    <a href="#how">설명</a>
+  </header>
+
+  <div class="stage" id="stage">
+    <canvas id="game" aria-label="게임 화면"></canvas>
+
+    <div class="overlay" id="start">
+      <h2>10초 연타</h2>
+      <p>10초 동안 최대한 많이 누르세요</p>
+      <button class="btn" id="start-btn" type="button">시작</button>
+      <p><span class="only-pc">스페이스를 눌러도 시작돼요</span><span class="only-touch">화면을 톡톡 누르면 돼요</span></p>
+    </div>
+
+    <div class="overlay" id="result" hidden>
+      <p>기록</p>
+      <div class="big" id="score">0</div>
+      <p id="best"></p>
+      <button class="btn" id="again-btn" type="button">다시 하기</button>
+      <div class="site-stamp" id="stamp"></div>
+    </div>
+  </div>
+
+  <a class="to-doc" href="#how">↓ 게임 설명</a>
+
+  <article class="doc" id="how">
+    <h2>어떤 게임이에요</h2>
+    <p>10초 동안 화면을 최대한 많이 누르는 게임이에요. 누른 횟수가 기록이에요.</p>
+
+    <h2>하는 법</h2>
+    <ul>
+      <li><strong>휴대폰</strong>: 게임 화면 아무 곳이나 톡톡 누르세요.</li>
+      <li><strong>PC</strong>: 스페이스바를 누르거나 화면을 클릭하세요.</li>
+    </ul>
+
+    <h2>어떻게 만들었나요</h2>
+    <p>(작품마다 쓴 AI 도구와 만든 과정을 짧게 적는 칸이에요.)</p>
+  </article>
+
+  <footer class="site-footer wrap">
+    <nav aria-label="사이트 정보">
+      <a href="/about/">소개</a>
+      <a href="/terms/">이용약관</a>
+      <a href="/privacy/">개인정보처리방침</a>
+      <a href="/contact/">문의</a>
+    </nav>
+    <div>© 2026 오늘의 AI 작품</div>
+  </footer>
+
+  <script src="/assets/game-kit.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>

@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /games/_template/
+
+Sitemap: https://today-ai-works.pages.dev/sitemap.xml

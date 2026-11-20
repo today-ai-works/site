@@ -1,0 +1,224 @@
+/* 오늘의 AI 작품: 모든 페이지가 같이 쓰는 스타일 */
+
+:root {
+  --bg: #f6f5f2;
+  --surface: #ffffff;
+  --text: #1d1d1f;
+  --muted: #6b6b70;
+  --border: #e4e2dc;
+  --accent: #5b5bf0;
+  --accent-soft: #ececff;
+  --radius: 16px;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 4px 16px rgba(0, 0, 0, 0.05);
+  --max: 960px;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #121214;
+    --surface: #1c1c20;
+    --text: #f2f2f4;
+    --muted: #a0a0a8;
+    --border: #2c2c32;
+    --accent: #8b8bff;
+    --accent-soft: #26264a;
+    --shadow: none;
+    color-scheme: dark;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+  line-height: 1.6;
+  word-break: keep-all;
+}
+
+a {
+  color: var(--accent);
+}
+
+.wrap {
+  max-width: var(--max);
+  margin: 0 auto;
+  padding: 0 16px;
+}
+
+/* 머리글 */
+.site-header {
+  padding-top: 40px;
+  padding-bottom: 24px;
+}
+
+.site-header .logo {
+  display: inline-block;
+  color: var(--text);
+  font-weight: 800;
+  font-size: 1.05rem;
+  text-decoration: none;
+}
+
+.site-header h1 {
+  margin: 12px 0 8px;
+  font-size: clamp(1.6rem, 5vw, 2.2rem);
+  line-height: 1.3;
+}
+
+.site-header p {
+  margin: 0;
+  color: var(--muted);
+}
+
+/* 작품 종류 제목 */
+.section-title {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin: 32px 0 12px;
+}
+
+.section-title h2 {
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+.section-title span {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+/* 작품 카드 목록 */
+.work-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+@media (min-width: 720px) {
+  .work-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+  }
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.card a {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+}
+
+.card-thumb {
+  aspect-ratio: 1 / 1;
+  background: var(--accent-soft);
+  display: grid;
+  place-items: center;
+  font-size: 2.4rem;
+}
+
+.card-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.card-body {
+  padding: 10px 12px 14px;
+}
+
+.card-body h3 {
+  margin: 0 0 2px;
+  font-size: 1rem;
+}
+
+.card-body p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.card.coming .card-thumb {
+  color: var(--muted);
+}
+
+/* 긴 글 (소개, 약관, 게임 설명) */
+.doc {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 8px 16px 48px;
+}
+
+.doc h1 {
+  font-size: 1.6rem;
+  margin: 8px 0 16px;
+}
+
+.doc h2 {
+  font-size: 1.15rem;
+  margin: 32px 0 8px;
+}
+
+.doc p,
+.doc li {
+  color: var(--text);
+}
+
+.doc .updated {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.back {
+  display: inline-block;
+  margin: 24px 0 0;
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+
+/* 바닥글 */
+.site-footer {
+  margin-top: 56px;
+  padding-top: 24px;
+  padding-bottom: 40px;
+  border-top: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.site-footer nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin-bottom: 8px;
+}
+
+.site-footer a {
+  color: var(--muted);
+  text-decoration: none;
+}
+
+.site-footer a:hover {
+  color: var(--text);
+}

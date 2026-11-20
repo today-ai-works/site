@@ -1,0 +1,138 @@
+/* 게임 페이지 공통 배치: 위쪽 막대 + 세로 비율 게임 화면 + 아래 설명 글 */
+
+.game-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 10px 16px;
+}
+
+.game-bar a {
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
+.game-bar h1 {
+  margin: 0;
+  font-size: 1rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 게임 화면: 휴대폰에서는 폭을 꽉 채우고, PC에서는 세로 비율 그대로 가운데에 둔다.
+   녹화하면 그대로 릴스 · 쇼츠 비율(9:16)이 된다. */
+.stage {
+  position: relative;
+  width: min(100vw, calc((100dvh - 56px) * 9 / 16), 480px);
+  aspect-ratio: 9 / 16;
+  margin: 0 auto;
+  background: var(--surface);
+  overflow: hidden;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+@media (min-width: 520px) {
+  .stage {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+  }
+}
+
+.stage canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* 시작 · 결과 화면 */
+.overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 24px;
+  text-align: center;
+  background: var(--surface);
+}
+
+.overlay[hidden] {
+  display: none;
+}
+
+.overlay h2 {
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+.overlay p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.overlay .big {
+  color: var(--text);
+  font-size: 3rem;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.btn {
+  min-width: 160px;
+  padding: 14px 20px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #fff;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.btn.ghost {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+/* 결과 화면 맨 아래 사이트 주소: 영상 끝에 "여기서 해 보세요"가 보이게 한다 */
+.site-stamp {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 14px;
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+/* 기기에 따라 안내 문구 나누기 (game-kit.js가 <html>에 touch / pc를 붙인다) */
+.only-touch,
+.only-pc {
+  display: none;
+}
+
+.touch .only-touch,
+.pc .only-pc {
+  display: inline;
+}
+
+.to-doc {
+  display: block;
+  margin: 12px auto 0;
+  color: var(--muted);
+  text-align: center;
+  font-size: 0.9rem;
+  text-decoration: none;
+}
