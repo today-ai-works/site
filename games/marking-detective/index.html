@@ -436,6 +436,65 @@
 
     #toast.show { opacity: 1; transform: translate(-50%, 0); }
 
+    .seg[hidden], .challenge-bar[hidden], .frame-hook[hidden], .frame-cta[hidden] { display: none; }
+
+    .challenge-bar {
+      margin: 0 0 12px;
+      padding: 9px 12px;
+      background: var(--pink);
+      border: 1px solid var(--pink-2);
+      border-radius: 12px;
+      color: var(--red-deep);
+      font-size: 0.92rem;
+    }
+
+    /* =========================================================
+       영상 녹화용 화면 (?frame): 540×960에 문제만, 2배로 찍으면 1080×1920
+       ========================================================= */
+    body.frame { width: 540px; height: 960px; overflow: hidden; }
+    body.frame .topbar,
+    body.frame .controls,
+    body.frame .challenge-bar,
+    body.frame .hintbar,
+    body.frame .submit-area,
+    body.frame .result,
+    body.frame .doc,
+    body.frame .footer,
+    body.frame .booklet .sub,
+    body.frame .omr-foot,
+    body.frame .omr-head { display: none !important; }
+
+    /* 릴스는 아래쪽 약 15%에 계정 이름 · 설명 글이 겹치므로 내용을 위로 모은다 */
+    body.frame .wrap { max-width: none; padding: 0 20px; }
+    body.frame .layout { grid-template-columns: 1fr; gap: 10px; }
+    body.frame .frame-hook { text-align: center; padding: 24px 0 12px; }
+
+    .frame-hook .tag {
+      display: inline-block;
+      padding: 4px 14px;
+      border-radius: 999px;
+      background: var(--red);
+      color: #fff;
+      font-weight: 900;
+      font-size: 1rem;
+      letter-spacing: 0.04em;
+    }
+
+    .frame-hook .hook-text { margin-top: 10px; font-size: 1.8rem; font-weight: 900; line-height: 1.28; letter-spacing: -0.02em; }
+
+    body.frame .booklet { padding: 12px 14px 8px; box-shadow: none; }
+    body.frame .booklet h2 { margin-bottom: 4px; }
+    body.frame .clue { padding: 2px 6px; font-size: 1rem; }
+    body.frame .omr { max-width: none; box-shadow: none; }
+    body.frame .bubble { height: 35px; }
+    body.frame .ell { width: 18px; height: 29px; font-size: 10px; }
+
+    body.frame .frame-cta { text-align: center; margin-top: 12px; }
+    .frame-timer { height: 8px; margin: 0 0 12px; border-radius: 999px; background: #e6dfd0; overflow: hidden; }
+    #frame-bar { display: block; height: 100%; width: var(--p, 100%); background: var(--red); border-radius: 999px; }
+    .frame-cta .cta-text { font-size: 1.15rem; font-weight: 800; }
+    .frame-cta .cta-url { margin-top: 2px; color: var(--muted); font-size: 0.9rem; font-weight: 700; }
+
     @media (prefers-reduced-motion: reduce) {
       .grade path { animation-duration: 0.01s; }
       .ink, .score.show, .qno.hl { animation: none; }
@@ -463,6 +522,12 @@
   </nav>
 
   <div class="wrap">
+    <!-- 영상 녹화용 머리글 (?frame 일 때만 보임) -->
+    <div class="frame-hook" id="frame-hook" hidden>
+      <span class="tag" id="frame-tag">도전</span>
+      <div class="hook-text" id="hook-text">이 답안지, 찍지 않고<br>다 맞힐 수 있는 사람? 🕵️</div>
+    </div>
+
     <!-- 위쪽 조작 -->
     <div class="controls">
       <div class="controls-row">
@@ -484,6 +549,8 @@
         </div>
       </div>
     </div>
+
+    <p class="challenge-bar" id="challenge-bar" hidden>🕵️ <b>도전 #<span id="challenge-no"></span></b> · 영상 속 바로 그 문제예요. 찍지 말고 추리로!</p>
 
     <p class="hintbar" id="hintbar" hidden></p>
 
@@ -525,35 +592,23 @@
       </section>
     </main>
 
-    <article class="doc" id="how">
-      <h2>어떤 게임인가요</h2>
-      <p>답안지의 정답이 숨겨져 있어요. 문제는 없고 <b>단서</b>만 있어요. "3번 답은 5번 답보다 크다", "②는 정확히 두 번 마킹된다" 같은 단서를 맞춰 보며 정답을 추리해 OMR 카드에 마킹하는 논리 퍼즐이에요. 모든 퍼즐은 정답이 딱 하나뿐이고, 찍지 않아도 단서만으로 끝까지 풀 수 있게 만들어져요.</p>
+    <!-- 영상 녹화용 꼬리글 -->
+    <div class="frame-cta" id="frame-cta" hidden>
+      <div class="frame-timer"><span id="frame-bar"></span></div>
+      <div class="cta-text" id="cta-text">정답은 <b>프로필 링크</b>에서 직접 풀어 보기</div>
+      <div class="cta-url">today-ai-works.pages.dev</div>
+    </div>
 
+    <article class="doc" id="how">
       <h2>하는 법</h2>
+      <p>단서만 보고 숨겨진 정답(①~⑤)을 추리해 답안지에 마킹하세요. 정답은 딱 하나라 찍지 않아도 풀려요.</p>
       <ul>
         <li><b>휴대폰</b>: 버블을 누르면 마킹, <b>길게 누르면</b> 연필 ✕ (이 답은 아니라는 메모)</li>
         <li><b>PC</b>: 왼쪽 클릭은 마킹, <b>오른쪽 클릭</b>은 연필 ✕. 키보드는 Tab으로 옮기고 Enter는 마킹, X는 ✕</li>
-        <li>마킹한 버블을 다시 누르면 지워져요. 한 문항에는 하나만 마킹돼요.</li>
-        <li>다 칠했으면 <b>제출</b>. 빨간 색연필로 채점해 줘요.</li>
-        <li>막히면 <b>💡 힌트</b>: 지금 정할 수 있는 칸과, 그 근거가 되는 단서를 형광펜으로 표시해 줘요.</li>
+        <li>마킹한 버블을 다시 누르면 지워져요. 다 쓴 단서는 눌러서 줄을 그어 두세요.</li>
+        <li>막히면 <b>💡 힌트</b>, 다 칠했으면 <b>제출</b>.</li>
+        <li><b>오늘의 퍼즐</b>은 하루에 하나, 모두 같은 문제예요. 결과를 ⭕❌로 공유할 수 있어요. <b>연습</b>은 새 퍼즐을 얼마든지.</li>
       </ul>
-
-      <h2>오늘의 퍼즐</h2>
-      <p>날짜마다 모든 사람에게 같은 퍼즐이 나와요(난이도별로 하나씩). 풀고 나면 결과를 ⭕❌ 줄로 공유할 수 있어요. 정답은 나오지 않으니 친구에게 보내도 괜찮아요. 연습 모드에서는 새 퍼즐을 얼마든지 풀 수 있어요.</p>
-
-      <h2>단서 종류</h2>
-      <ul>
-        <li>크기 비교: "A번 답은 B번 답보다 크다"</li>
-        <li>개수: "④는 정확히 2번 마킹된다"</li>
-        <li>합: "A번 답 + B번 답 = 7"</li>
-        <li>홀짝: "A번 답은 짝수다"</li>
-        <li>같음 · 다름: "A번과 B번은 답이 같다"</li>
-        <li>이웃: "바로 붙어 있는 두 문항이 같은 답인 곳은 정확히 1군데다"</li>
-        <li>제외: "A번 답은 ③이 아니다"</li>
-      </ul>
-
-      <h2>어떻게 만들었나요</h2>
-      <p>AI에게 규칙과 화면을 글로 설명해서 만든 게임이에요. 퍼즐은 매번 컴퓨터가 새로 만들어요. 먼저 정답을 무작위로 정하고, 정답과 맞는 단서를 하나씩 더하면서 "단서만으로 모든 칸이 정해지는지"를 확인해요. 그다음 빼도 풀리는 단서는 하나씩 지워 꼭 필요한 단서만 남겨요. 마지막으로 가능한 답을 모두 따져 보는 탐색(백트래킹)으로 정답이 정확히 하나인지 한 번 더 검사해요.</p>
     </article>
 
     <footer class="footer">
@@ -577,6 +632,16 @@
       normal: { n: 8, name: '보통' },
       hard: { n: 10, name: '어려움' },
     };
+    // 도전 퍼즐: 인스타 영상에 올린 문제. 번호마다 난이도와 시드를 고정한다
+    // (한 번 올린 번호는 바꾸지 않는다. 퍼즐 생성 코드를 바꾸면 같은 시드라도 문제가 달라지니 조심)
+    const CHALLENGES = {
+      1: { level: 'normal', seed: 523 }, // 2026-11-20: 단서 7개, 매 단계 단서 2~3개를 엮어야 풀림
+    };
+    const params = new URLSearchParams(location.search);
+    const challengeNo = CHALLENGES[Number(params.get('c'))] ? Number(params.get('c')) : 0;
+    const isFrame = params.has('frame'); // 영상 녹화용 9:16 화면
+    const previewSeed = params.has('seed') ? Number(params.get('seed')) >>> 0 : null; // 문제 고르기용 미리보기
+
     const CIRCLED = ['', '①', '②', '③', '④', '⑤'];
     const LABELS = [...'ㄱㄴㄷㄹㅁㅂㅅㅇㅈㅊㅋㅌㅍㅎ', ...'ABCDEFGHIJKLMNOPQRSTUVWXYZ'];
     const isTouch = window.matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
@@ -976,9 +1041,11 @@
        6. 게임 상태와 저장
        ========================================================= */
     const prefs = store.get(`taw:${GAME_KEY}:prefs`) || {};
+    const previewLevel = LEVELS[params.get('level')] ? params.get('level') : null;
     const S = {
-      mode: prefs.mode === 'practice' ? 'practice' : 'daily',
-      level: LEVELS[prefs.level] ? prefs.level : 'normal',
+      mode: challengeNo ? 'challenge' : previewSeed !== null ? 'practice' : prefs.mode === 'practice' ? 'practice' : 'daily',
+      level: challengeNo ? CHALLENGES[challengeNo].level : previewLevel || (LEVELS[prefs.level] ? prefs.level : 'normal'),
+      challenge: challengeNo,
       date: todayKey(),
       puzzle: null,
       marks: [],          // marks[i] = 마킹한 번호 (0 = 비어 있음)
@@ -992,17 +1059,21 @@
       hint: null,
     };
 
-    const dailyKey = () => `taw:${GAME_KEY}:daily:${S.date}:${S.level}`;
+    const dailyKey = () => (S.mode === 'challenge'
+      ? `taw:${GAME_KEY}:challenge:${S.challenge}`
+      : `taw:${GAME_KEY}:daily:${S.date}:${S.level}`);
+    const keepsProgress = () => !isFrame && (S.mode === 'daily' || S.mode === 'challenge');
     const bestKey = () => `taw:best:${GAME_KEY}:${S.level}`;
     const elapsedNow = () => S.elapsed + (S.running ? performance.now() - S.startedAt : 0);
 
     function savePrefs() {
+      if (S.mode === 'challenge' || isFrame) return;
       store.set(`taw:${GAME_KEY}:prefs`, { mode: S.mode, level: S.level });
     }
 
-    // 오늘의 퍼즐은 풀던 상태까지 저장한다 (새로고침해도 이어서)
+    // 오늘의 퍼즐 · 도전 퍼즐은 풀던 상태까지 저장한다 (새로고침해도 이어서)
     function saveProgress() {
-      if (S.mode !== 'daily' || !S.puzzle) return;
+      if (!keepsProgress() || !S.puzzle) return;
       store.set(dailyKey(), {
         marks: S.marks,
         xs: S.xs,
@@ -1181,10 +1252,14 @@
 
     function renderHeader() {
       const lv = LEVELS[S.level];
-      $('omr-meta').textContent = `${S.mode === 'daily' ? `${monthDay(S.date)} 오늘의 퍼즐` : '연습'} · ${lv.name} ${lv.n}문항`;
+      const where = S.mode === 'challenge' ? `도전 #${S.challenge}` : S.mode === 'daily' ? `${monthDay(S.date)} 오늘의 퍼즐` : '연습';
+      $('omr-meta').textContent = `${where} · ${lv.name} ${lv.n}문항`;
       for (const b of $('mode-seg').children) b.setAttribute('aria-pressed', String(b.dataset.mode === S.mode));
       for (const b of $('level-seg').children) b.setAttribute('aria-pressed', String(b.dataset.level === S.level));
-      $('new-btn').hidden = S.mode === 'daily';
+      $('level-seg').hidden = S.mode === 'challenge';
+      $('challenge-bar').hidden = S.mode !== 'challenge';
+      $('challenge-no').textContent = S.challenge;
+      $('new-btn').hidden = S.mode !== 'practice';
       $('hint-btn').disabled = S.finished;
       $('submit-area').hidden = S.finished;
       $('omr').classList.toggle('done', S.finished);
@@ -1431,11 +1506,11 @@
         const best = store.get(bestKey());
         if (newBest) sub += ' · 🏆 최고 기록!';
         else if (best !== null) sub += ` · 최고 ${fmtTime(best)}`;
-      } else {
+      } else if (S.mode === 'daily') {
         sub += ' · 내일 새 퍼즐이 나와요';
       }
       $('res-sub').textContent = sub;
-      $('next-btn').textContent = S.mode === 'daily' ? '연습하러 가기' : '새 퍼즐';
+      $('next-btn').textContent = { daily: '연습하러 가기', challenge: '오늘의 퍼즐 풀기', practice: '새 퍼즐' }[S.mode];
       $('result').hidden = false;
       $('result').scrollIntoView({ block: 'nearest', behavior: 'smooth' });
     }
@@ -1447,8 +1522,13 @@
        ========================================================= */
     async function share() {
       const lv = LEVELS[S.level].name;
-      const title = S.mode === 'daily' ? `🕵️ 마킹 탐정 ${monthDay(S.date)} · ${lv}` : `🕵️ 마킹 탐정 연습 · ${lv}`;
-      const text = `${title}\n${resultGrid()}\n⏱ ${fmtTime(S.elapsed)}${S.hints ? ` · 💡${S.hints}` : ''}\nhttps://${SITE_URL}/games/${GAME_KEY}/`;
+      const title = {
+        challenge: `🕵️ 마킹 탐정 도전 #${S.challenge}`,
+        daily: `🕵️ 마킹 탐정 ${monthDay(S.date)} · ${lv}`,
+        practice: `🕵️ 마킹 탐정 연습 · ${lv}`,
+      }[S.mode];
+      const link = `https://${SITE_URL}/games/${GAME_KEY}/${S.mode === 'challenge' ? `?c=${S.challenge}` : ''}`;
+      const text = `${title}\n${resultGrid()}\n⏱ ${fmtTime(S.elapsed)}${S.hints ? ` · 💡${S.hints}` : ''}\n${link}`;
       if (isTouch && navigator.share) {
         try {
           await navigator.share({ text });
@@ -1480,9 +1560,12 @@
       setTimeout(() => {
         S.date = todayKey();
         const lv = LEVELS[S.level];
-        const seed = S.mode === 'daily'
-          ? hashStr(`${GAME_KEY}|${S.date}|${S.level}`)
-          : (Math.random() * 4294967296) >>> 0;
+        let seed;
+        if (S.mode === 'challenge') seed = CHALLENGES[S.challenge].seed;
+        else if (S.mode === 'daily') seed = hashStr(`${GAME_KEY}|${S.date}|${S.level}`);
+        else if (previewSeed !== null) seed = previewSeed;
+        else seed = (Math.random() * 4294967296) >>> 0;
+        S.seed = seed;
         S.puzzle = generatePuzzle(lv.n, seed);
         S.marks = Array(lv.n).fill(0);
         S.xs = Array(lv.n).fill(0);
@@ -1491,7 +1574,7 @@
         S.elapsed = 0;
         S.finished = false;
 
-        if (S.mode === 'daily') {
+        if (keepsProgress()) {
           const saved = store.get(dailyKey());
           if (saved && Array.isArray(saved.marks) && saved.marks.length === lv.n) {
             S.marks = saved.marks.map((v) => (Number.isInteger(v) && v >= 0 && v <= 5 ? v : 0));
@@ -1507,14 +1590,25 @@
         renderClues();
         renderRows();
         $('busy').hidden = true;
-        if (S.finished) {
+        if (isFrame) {
+          renderTimer();
+        } else if (S.finished) {
           drawGrades(false);
           showResult(false);
           renderTimer();
         } else {
           startTimer();
         }
+        document.body.dataset.ready = '1';
       }, 30);
+    }
+
+    // 도전 퍼즐에서 다른 모드로 가면 주소의 ?c= 를 지운다
+    function leaveChallenge() {
+      if (S.mode !== 'challenge') return;
+      S.challenge = 0;
+      S.level = LEVELS[prefs.level] ? prefs.level : S.level;
+      history.replaceState(null, '', location.pathname);
     }
 
     function wantsLeave() {
@@ -1526,6 +1620,7 @@
       const b = ev.target.closest('button');
       if (!b || b.dataset.mode === S.mode || !wantsLeave()) return;
       saveProgress();
+      leaveChallenge();
       S.mode = b.dataset.mode;
       savePrefs();
       loadPuzzle();
@@ -1545,7 +1640,11 @@
     });
 
     $('next-btn').addEventListener('click', () => {
-      if (S.mode === 'daily') {
+      if (S.mode === 'challenge') {
+        leaveChallenge();
+        S.mode = 'daily';
+        savePrefs();
+      } else if (S.mode === 'daily') {
         S.mode = 'practice';
         savePrefs();
       }
@@ -1566,7 +1665,15 @@
     window.addEventListener('pagehide', saveProgress);
 
     // 테스트 · 확인용 (화면 동작에는 쓰지 않음)
-    window.__markingDetective = { generatePuzzle, countSolutions, solvesByLogic, state: S };
+    window.__markingDetective = { generatePuzzle, countSolutions, solvesByLogic, propagate, isSingle, FULL, bit, state: S };
+
+    // 영상 녹화용 화면: 조작 버튼을 숨기고 9:16 한 화면에 문제만 담는다
+    if (isFrame) {
+      document.body.classList.add('frame');
+      $('frame-hook').hidden = false;
+      $('frame-cta').hidden = false;
+      $('frame-tag').textContent = challengeNo ? `도전 #${challengeNo}` : '도전';
+    }
 
     loadPuzzle();
   })();
