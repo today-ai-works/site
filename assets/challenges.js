@@ -14,4 +14,11 @@ window.TAW_CHALLENGES = [
     desc: '보통 8문항 · 찍지 않고 다 맞힐 수 있을까?',
     puzzle: { gameKey: 'marking-detective', level: 'normal', seed: 523 }, // 단서 7개, 매 단계 단서 2~3개를 엮어야 풀림
   },
+  {
+    no: 2,
+    game: '눈송이 오르골',
+    url: '/games/snow-music-box/',
+    date: '2026-11-22',
+    desc: '선을 그으면 눈이 노래해요 · 소설(小雪) 기념',
+  },
 ];

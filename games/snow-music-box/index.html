@@ -1,0 +1,1179 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>눈송이 오르골 — 선을 그으면 눈이 노래해요 | 오늘의 AI 작품</title>
+  <meta name="description" content="손가락으로 선을 그으면, 떨어지는 눈송이가 닿을 때마다 오르골 소리가 나요. 선의 높이에 따라 음이 달라져 매번 다른 겨울 멜로디. 설치 없이 휴대폰과 PC에서 바로.">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="눈송이 오르골 — 선을 그으면 눈이 노래해요">
+  <meta property="og:description" content="내가 그린 선 위로 눈이 떨어질 때마다 음이 울리는 눈 내리는 악기.">
+  <meta property="og:url" content="https://today-ai-works.pages.dev/games/snow-music-box/">
+  <link rel="canonical" href="https://today-ai-works.pages.dev/games/snow-music-box/">
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+  <style>
+    /* =========================================================
+       1. 화면 배치: 전체 화면 캔버스 + 위 제목 + 아래 조작 막대
+       ========================================================= */
+    :root {
+      --text: #f3f1ff;
+      --muted: rgba(243, 241, 255, 0.7);
+      --glass: rgba(18, 14, 48, 0.55);
+      --glass-border: rgba(255, 255, 255, 0.16);
+      --accent: #b9c8ff;
+      color-scheme: dark;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      height: 100%;
+      overflow: hidden;
+      background: #0b1033;
+      color: var(--text);
+      font-family: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+      -webkit-text-size-adjust: 100%;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    #sky {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+      touch-action: none; /* 선을 그을 때 화면이 움직이지 않게 */
+      cursor: crosshair;
+    }
+
+    .top {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: calc(10px + env(safe-area-inset-top)) 14px 10px;
+      pointer-events: none;
+    }
+
+    .top > * { pointer-events: auto; }
+    .top a, .top button { color: var(--muted); text-decoration: none; font-size: 0.88rem; }
+    .top h1 { margin: 0; font-size: 1rem; font-weight: 800; letter-spacing: 0.02em; pointer-events: none; }
+
+    .icon-btn {
+      border: 1px solid var(--glass-border);
+      background: var(--glass);
+      color: var(--text);
+      border-radius: 999px;
+      padding: 6px 12px;
+      font: inherit;
+      font-size: 0.85rem;
+      cursor: pointer;
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+    }
+
+    /* 아래 조작 막대 */
+    .bar {
+      position: fixed;
+      left: 50%;
+      bottom: calc(12px + env(safe-area-inset-bottom));
+      transform: translateX(-50%);
+      width: min(96vw, 760px);
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+      gap: 8px 12px;
+      padding: 10px 12px;
+      border-radius: 18px;
+      background: var(--glass);
+      border: 1px solid var(--glass-border);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      font-size: 0.85rem;
+    }
+
+    .group { display: flex; align-items: center; gap: 6px; }
+
+    .theme-btn {
+      width: 38px;
+      height: 34px;
+      border-radius: 10px;
+      border: 1px solid transparent;
+      background: transparent;
+      font-size: 1.15rem;
+      cursor: pointer;
+      transition: background 0.15s ease, border-color 0.15s ease;
+    }
+
+    .theme-btn[aria-pressed="true"] { background: rgba(255, 255, 255, 0.14); border-color: var(--glass-border); }
+
+    .bar label { display: flex; align-items: center; gap: 6px; color: var(--muted); white-space: nowrap; }
+    .bar input[type="range"] { width: 92px; accent-color: var(--accent); }
+
+    .bar button.tool {
+      border: 1px solid var(--glass-border);
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--text);
+      border-radius: 999px;
+      padding: 7px 11px;
+      font: inherit;
+      font-size: 0.85rem;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .bar button.tool:active, .theme-btn:active { transform: scale(0.96); }
+
+    @media (max-width: 560px) {
+      .bar { gap: 6px 8px; padding: 8px; }
+      .bar input[type="range"] { width: 70px; }
+      .hide-sm { display: none; }
+    }
+
+    /* 시작 안내 (소리는 한 번 눌러야 켜진다) */
+    .start {
+      position: fixed;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      padding: 24px;
+      background: rgba(8, 8, 30, 0.62);
+      cursor: pointer;
+    }
+
+    .start[hidden] { display: none; }
+    .start .big { font-size: 1.8rem; font-weight: 900; margin: 6px 0; text-shadow: 0 0 18px rgba(185, 200, 255, 0.6); }
+    .start p { margin: 4px 0; color: var(--muted); }
+    .start .pill {
+      display: inline-block;
+      margin-top: 16px;
+      padding: 12px 24px;
+      border-radius: 999px;
+      background: #fff;
+      color: #1b1446;
+      font-weight: 800;
+    }
+
+    .badge {
+      position: fixed;
+      top: calc(52px + env(safe-area-inset-top));
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 6px 14px;
+      border-radius: 999px;
+      background: var(--glass);
+      border: 1px solid var(--glass-border);
+      font-size: 0.85rem;
+      white-space: nowrap;
+      pointer-events: none;
+      transition: opacity 0.6s ease;
+    }
+
+    .badge[hidden] { display: none; }
+
+    #toast {
+      position: fixed;
+      left: 50%;
+      bottom: calc(120px + env(safe-area-inset-bottom));
+      transform: translate(-50%, 10px);
+      padding: 9px 16px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.92);
+      color: #1b1446;
+      font-size: 0.9rem;
+      font-weight: 600;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease, transform 0.2s ease;
+      white-space: nowrap;
+    }
+
+    #toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+    /* 하는 법 */
+    dialog {
+      width: min(92vw, 440px);
+      padding: 20px 22px;
+      border-radius: 20px;
+      border: 1px solid var(--glass-border);
+      background: #1a1440;
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    dialog::backdrop { background: rgba(4, 4, 20, 0.6); }
+    dialog h2 { margin: 0 0 8px; font-size: 1.15rem; }
+    dialog ul { padding-left: 18px; margin: 8px 0; }
+    dialog li { margin: 4px 0; }
+    dialog a { color: var(--accent); }
+    dialog .close { margin-top: 10px; }
+
+    /* 영상 녹화용 (?frame): 릴스 안전 영역 안에 글자만 */
+    .frame-hook, .frame-cta { display: none; }
+
+    body.frame .top, body.frame .bar, body.frame .start, body.frame .badge, body.frame #toast { display: none !important; }
+    body.frame #sky { cursor: none; }
+
+    body.frame .frame-hook {
+      display: block;
+      position: fixed;
+      top: 125px;
+      left: 30px;
+      width: 430px;
+      text-align: center;
+      pointer-events: none;
+    }
+
+    .frame-hook .tag {
+      display: inline-block;
+      padding: 4px 14px;
+      border-radius: 999px;
+      background: #fff;
+      color: #2a1650;
+      font-weight: 900;
+      font-size: 0.95rem;
+    }
+
+    .frame-hook .hook { margin-top: 10px; font-size: 1.7rem; font-weight: 900; line-height: 1.3; text-shadow: 0 2px 14px rgba(0, 0, 0, 0.45); }
+
+    body.frame .frame-cta {
+      display: block;
+      position: fixed;
+      top: 690px;
+      left: 30px;
+      width: 430px;
+      text-align: center;
+      pointer-events: none;
+    }
+
+    .frame-cta .cta { font-size: 1.08rem; font-weight: 800; text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5); }
+    .frame-cta .url { margin-top: 2px; font-size: 0.85rem; color: var(--muted); font-weight: 700; }
+  </style>
+</head>
+<body>
+  <canvas id="sky" aria-label="눈이 내리는 밤하늘. 드래그해서 선을 그을 수 있어요"></canvas>
+
+  <header class="top">
+    <a href="/">← 오늘의 AI 작품</a>
+    <h1>❄️ 눈송이 오르골</h1>
+    <button type="button" class="icon-btn" id="help-btn">하는 법</button>
+  </header>
+
+  <div class="badge" id="badge" hidden></div>
+
+  <div class="bar" role="toolbar" aria-label="조작">
+    <div class="group" role="group" aria-label="악기">
+      <button type="button" class="theme-btn" data-theme="snow" aria-label="눈 · 오르골">❄️</button>
+      <button type="button" class="theme-btn" data-theme="rain" aria-label="비 · 마림바">🌧️</button>
+      <button type="button" class="theme-btn" data-theme="leaf" aria-label="낙엽 · 우드블록">🍂</button>
+    </div>
+    <label>🌬️<span class="hide-sm">바람</span><input type="range" id="wind" min="-1" max="1" step="0.05" value="0" aria-label="바람 세기"></label>
+    <label><span id="amount-icon">❄️</span><span class="hide-sm">양</span><input type="range" id="amount" min="0" max="1" step="0.05" value="0.5" aria-label="내리는 양"></label>
+    <div class="group">
+      <button type="button" class="tool" id="undo" aria-label="마지막 선 지우기">↶</button>
+      <button type="button" class="tool" id="clear">🗑 지우기</button>
+      <button type="button" class="tool" id="mute" aria-label="소리 끄기">🔊</button>
+      <button type="button" class="tool" id="share">🔗 공유</button>
+    </div>
+  </div>
+
+  <div class="start" id="start" role="button" tabindex="0" aria-label="눌러서 시작">
+    <div>
+      <div style="font-size:2.4rem">❄️🎵</div>
+      <div class="big">눈송이 오르골</div>
+      <p>선을 그으면, 눈이 닿을 때마다 소리가 나요</p>
+      <p>위쪽 선은 높은 음, 아래쪽 선은 낮은 음</p>
+      <span class="pill">눌러서 시작 (소리 켜짐)</span>
+    </div>
+  </div>
+
+  <div class="frame-hook"><span class="tag" id="frame-tag">도전</span><div class="hook" id="frame-hook-text">선을 그으면<br>눈이 노래해요 🎵</div></div>
+  <div class="frame-cta"><div class="cta" id="frame-cta-text">프로필 링크에서 직접 연주해 보기</div><div class="url">today-ai-works.pages.dev</div></div>
+
+  <div id="toast" role="status" aria-live="polite"></div>
+
+  <dialog id="help" aria-labelledby="help-title">
+    <h2 id="help-title">하는 법</h2>
+    <ul>
+      <li>화면을 <b>드래그</b>해서 선을 그으세요. 나뭇가지, 지붕, 전깃줄처럼요.</li>
+      <li>눈송이가 선에 닿으면 소리가 나요. <b>위쪽 선은 높은 음, 아래쪽 선은 낮은 음</b>이에요. 어떻게 그어도 듣기 좋은 음계(펜타토닉)라 마음대로 그어도 돼요.</li>
+      <li>평평한 선에는 눈이 쌓이고, 무거워지면 <b>툭 떨어지며 낮은 음</b>이 울려요.</li>
+      <li>🌬️ 바람, ❄️ 양으로 눈을 바꾸고, ❄️ 🌧️ 🍂 로 악기를 바꿀 수 있어요 (오르골 · 마림바 · 우드블록).</li>
+      <li>↶ 마지막 선 지우기, 🗑 모두 지우기, 🔗 공유는 내가 그린 "눈 악보"를 링크로 보내요.</li>
+      <li>소리가 안 나면 휴대폰 무음 모드를 꺼 주세요.</li>
+    </ul>
+    <p style="margin:8px 0 0;color:var(--muted);font-size:.85rem"><a href="/">오늘의 AI 작품</a> · <a href="/privacy/">개인정보처리방침</a> · <a href="https://www.instagram.com/today_ai_works/" target="_blank" rel="noopener">@today_ai_works</a></p>
+    <button type="button" class="icon-btn close" id="help-close">닫기</button>
+  </dialog>
+
+  <script>
+  (() => {
+    'use strict';
+
+    /* =========================================================
+       1. 기본 설정
+       ========================================================= */
+    const SITE_URL = 'today-ai-works.pages.dev';
+    const params = new URLSearchParams(location.search);
+    const isFrame = params.has('frame'); // 영상 녹화용: 시간을 바깥에서 한 칸씩 움직인다
+
+    // 시드 난수 (영상은 매번 똑같이 나오도록)
+    function mulberry32(seed) {
+      let a = seed >>> 0;
+      return () => {
+        a = (a + 0x6d2b79f5) | 0;
+        let t = Math.imul(a ^ (a >>> 15), 1 | a);
+        t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      };
+    }
+    const rand = isFrame ? mulberry32(1122) : Math.random;
+    const between = (a, b) => a + rand() * (b - a);
+    const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+
+    // 테마: 눈(오르골) · 비(마림바) · 낙엽(우드블록)
+    const THEMES = {
+      snow: {
+        icon: '❄️', label: '눈 · 오르골', voice: 'musicbox', shift: 0,
+        sky: ['#0b1033', '#22165a', '#45276e'], glow: 'rgba(190, 205, 255, 0.18)', line: 'rgba(255, 255, 255, 0.92)',
+        fall: [32, 62], rate: [2, 26], bounce: 0.18, friction: 0.9, piles: true, stars: true,
+      },
+      rain: {
+        icon: '🌧️', label: '비 · 마림바', voice: 'marimba', shift: -12,
+        sky: ['#08111f', '#13283f', '#22405a'], glow: 'rgba(140, 190, 255, 0.18)', line: 'rgba(210, 230, 255, 0.9)',
+        fall: [300, 420], rate: [5, 44], bounce: 0.3, friction: 0.97, piles: false, stars: false,
+      },
+      leaf: {
+        icon: '🍂', label: '낙엽 · 우드블록', voice: 'wood', shift: 0,
+        sky: ['#170d22', '#3b1d33', '#6e3a2b'], glow: 'rgba(255, 190, 140, 0.16)', line: 'rgba(255, 236, 214, 0.9)',
+        fall: [42, 78], rate: [1, 10], bounce: 0.25, friction: 0.9, piles: false, stars: true,
+      },
+    };
+
+    const S = {
+      theme: 'snow',
+      wind: 0,
+      amount: 0.5,
+      muted: false,
+      started: false,
+      strokes: [],      // [{ pts: [{x,y} 0~1 비율], segs: [...] }]
+      drawing: null,    // 지금 긋고 있는 선
+      flakes: [],
+      clumps: [],
+      powder: [],
+      rings: [],
+      time: 0,
+      spawnAcc: 0,
+      pileMax: 6, // 선 한 토막에 눈이 이만큼 쌓이면 떨어진다
+    };
+
+    const $ = (id) => document.getElementById(id);
+    let toastTimer = 0;
+    function toast(msg) {
+      const t = $('toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
+    }
+
+    /* =========================================================
+       2. 캔버스 크기 (화면 선명도 · 크기 바뀔 때 선 다시 계산)
+       ========================================================= */
+    const canvas = $('sky');
+    const ctx = canvas.getContext('2d');
+    let W = 0;
+    let H = 0;
+    let DPR = 1;
+    let skyGradient = null;
+    let stars = [];
+
+    function resize() {
+      DPR = Math.min(window.devicePixelRatio || 1, 2);
+      W = window.innerWidth;
+      H = window.innerHeight;
+      canvas.width = Math.round(W * DPR);
+      canvas.height = Math.round(H * DPR);
+      ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+      makeSky();
+      for (const s of S.strokes) buildSegs(s);
+    }
+
+    function makeSky() {
+      const th = THEMES[S.theme];
+      skyGradient = ctx.createLinearGradient(0, 0, 0, H);
+      skyGradient.addColorStop(0, th.sky[0]);
+      skyGradient.addColorStop(0.55, th.sky[1]);
+      skyGradient.addColorStop(1, th.sky[2]);
+      const r = mulberry32(7);
+      stars = Array.from({ length: Math.round((W * H) / 9000) }, () => ({ x: r() * W, y: r() * H * 0.7, a: 0.15 + r() * 0.45, s: 0.5 + r() * 1.1 }));
+    }
+
+    /* =========================================================
+       3. 눈송이 모양: 6각 대칭을 무작위로 만들어 작은 그림(sprite)으로 저장
+       ========================================================= */
+    function makeFlakeSprite(radius) {
+      const size = Math.ceil((radius * 2 + 4) * DPR);
+      const c = document.createElement('canvas');
+      c.width = size;
+      c.height = size;
+      const g = c.getContext('2d');
+      g.translate(size / 2, size / 2);
+      g.scale(DPR, DPR);
+      g.strokeStyle = 'rgba(255,255,255,0.95)';
+      g.lineCap = 'round';
+      g.lineWidth = Math.max(0.9, radius * 0.16);
+      g.shadowColor = 'rgba(200,220,255,0.9)';
+      g.shadowBlur = 2;
+      // 팔 하나의 모양을 정하고 60도씩 6번 돌려 그린다 → 모든 눈송이가 조금씩 다르다
+      const branches = Array.from({ length: 1 + Math.floor(rand() * 3) }, () => ({
+        at: between(0.3, 0.85), len: between(0.18, 0.5), ang: between(0.55, 1.0),
+      }));
+      const hex = rand() < 0.45;
+      const tipDot = rand() < 0.35;
+      for (let k = 0; k < 6; k++) {
+        g.save();
+        g.rotate((Math.PI / 3) * k);
+        g.beginPath();
+        g.moveTo(0, 0);
+        g.lineTo(0, -radius);
+        for (const b of branches) {
+          const y = -radius * b.at;
+          const L = radius * b.len;
+          g.moveTo(0, y);
+          g.lineTo(Math.sin(b.ang) * L, y - Math.cos(b.ang) * L);
+          g.moveTo(0, y);
+          g.lineTo(-Math.sin(b.ang) * L, y - Math.cos(b.ang) * L);
+        }
+        g.stroke();
+        if (tipDot) {
+          g.beginPath();
+          g.arc(0, -radius, g.lineWidth * 0.9, 0, Math.PI * 2);
+          g.fillStyle = '#fff';
+          g.fill();
+        }
+        g.restore();
+      }
+      if (hex) {
+        g.beginPath();
+        for (let k = 0; k < 6; k++) {
+          const a = (Math.PI / 3) * k;
+          g.lineTo(Math.sin(a) * radius * 0.28, -Math.cos(a) * radius * 0.28);
+        }
+        g.closePath();
+        g.stroke();
+      }
+      return c;
+    }
+
+    // 낙엽 모양 (색 · 크기 무작위)
+    function makeLeafSprite(radius) {
+      const size = Math.ceil((radius * 2 + 4) * DPR);
+      const c = document.createElement('canvas');
+      c.width = size;
+      c.height = size;
+      const g = c.getContext('2d');
+      g.translate(size / 2, size / 2);
+      g.scale(DPR, DPR);
+      const colors = ['#e8883a', '#d9542f', '#f2b84b', '#b8462e', '#e0a040'];
+      g.fillStyle = colors[Math.floor(rand() * colors.length)];
+      g.beginPath();
+      g.moveTo(0, -radius);
+      g.quadraticCurveTo(radius * 0.85, -radius * 0.2, 0, radius);
+      g.quadraticCurveTo(-radius * 0.85, -radius * 0.2, 0, -radius);
+      g.fill();
+      g.strokeStyle = 'rgba(80,30,10,0.5)';
+      g.lineWidth = Math.max(0.7, radius * 0.08);
+      g.beginPath();
+      g.moveTo(0, -radius * 0.9);
+      g.lineTo(0, radius * 1.05);
+      g.stroke();
+      return c;
+    }
+
+    /* =========================================================
+       4. 소리 (Web Audio): 펜타토닉 음계, 빠른 어택 + 짧은 감쇠
+       ========================================================= */
+    const PENTA = [0, 2, 4, 7, 9]; // C D E G A
+    const NOTE_COUNT = 15;         // 3옥타브
+    const mtof = (m) => 440 * Math.pow(2, (m - 69) / 12);
+
+    // 화면 높이 → 음 (위쪽일수록 높은 음)
+    function noteForY(y, shift) {
+      const i = clamp(Math.round((1 - y / H) * (NOTE_COUNT - 1)), 0, NOTE_COUNT - 1);
+      return 60 + shift + Math.floor(i / 5) * 12 + PENTA[i % 5];
+    }
+
+    // 악기별 소리 재료: [배음 비율, 파형, 크기, 감쇠 시간(초)]
+    const VOICES = {
+      musicbox: { partials: [[1, 'sine', 1, 1.0], [1, 'triangle', 0.25, 1.0], [4, 'sine', 0.07, 0.3]], attack: 0.004, gain: 0.2 },
+      marimba: { partials: [[1, 'sine', 1, 0.55], [4, 'sine', 0.16, 0.09], [10, 'sine', 0.04, 0.03]], attack: 0.003, gain: 0.26 },
+      wood: { partials: [[1, 'triangle', 1, 0.13], [2.7, 'sine', 0.35, 0.06]], attack: 0.001, gain: 0.3, drop: 1.6 },
+      low: { partials: [[1, 'sine', 1, 1.7], [2, 'triangle', 0.22, 0.9]], attack: 0.01, gain: 0.34 },
+    };
+
+    const sound = {
+      ctx: null,
+      master: null,
+      tokens: 8,      // 1초에 8번까지만 울리게 (너무 시끄럽지 않게)
+      lastLow: -9,    // 낮은 음(눈 덩어리)은 0.9초에 한 번까지
+      lastTime: 0,
+      lastMidi: -1,
+      lastMidiTime: -1,
+      notes: [],      // 영상용: 울린 음 기록
+
+      // 첫 클릭 때 오디오 시작 (브라우저 자동 재생 정책)
+      start() {
+        if (isFrame) return;
+        try {
+          if (!this.ctx) {
+            const AC = window.AudioContext || window.webkitAudioContext;
+            this.ctx = new AC();
+            const comp = this.ctx.createDynamicsCompressor();
+            comp.threshold.value = -14;
+            comp.ratio.value = 4;
+            comp.connect(this.ctx.destination);
+            this.master = this.ctx.createGain();
+            this.master.gain.value = S.muted ? 0 : 0.8;
+            this.master.connect(comp);
+            // 살짝 울림(에코)
+            const delay = this.ctx.createDelay(1);
+            delay.delayTime.value = 0.23;
+            const feedback = this.ctx.createGain();
+            feedback.gain.value = 0.28;
+            const wet = this.ctx.createGain();
+            wet.gain.value = 0.22;
+            this.master.connect(delay);
+            delay.connect(feedback);
+            feedback.connect(delay);
+            delay.connect(wet);
+            wet.connect(comp);
+          }
+          if (this.ctx.state !== 'running') this.ctx.resume();
+        } catch (e) {
+          toast('이 브라우저에서는 소리를 낼 수 없어요');
+        }
+      },
+
+      setMuted(m) {
+        if (this.master) this.master.gain.setTargetAtTime(m ? 0 : 0.8, this.ctx.currentTime, 0.03);
+      },
+
+      // 음 하나 울리기. 게임 시간 기준으로 초당 횟수를 제한한다
+      play(midi, vel, voiceName, force) {
+        const dt = S.time - this.lastTime;
+        this.lastTime = S.time;
+        this.tokens = Math.min(8, this.tokens + dt * 8);
+        if (voiceName === 'low') {
+          if (S.time - this.lastLow < 0.9) return false;
+          this.lastLow = S.time;
+        } else if (!force) {
+          if (this.tokens < 1) return false;
+          if (midi === this.lastMidi && S.time - this.lastMidiTime < 0.06) return false;
+          this.tokens -= 1;
+        }
+        this.lastMidi = midi;
+        this.lastMidiTime = S.time;
+        if (isFrame) {
+          this.notes.push({ t: S.time, midi, vel, voice: voiceName });
+          return true;
+        }
+        if (!this.ctx || S.muted || this.ctx.state !== 'running') return true;
+        const v = VOICES[voiceName];
+        const now = this.ctx.currentTime + 0.005;
+        const f = mtof(midi);
+        for (const [ratio, type, amp, decay] of v.partials) {
+          const osc = this.ctx.createOscillator();
+          const g = this.ctx.createGain();
+          osc.type = type;
+          if (v.drop) {
+            osc.frequency.setValueAtTime(f * ratio * v.drop, now);
+            osc.frequency.exponentialRampToValueAtTime(f * ratio, now + 0.03);
+          } else {
+            osc.frequency.value = f * ratio;
+          }
+          const peak = Math.max(0.0002, amp * vel * v.gain);
+          g.gain.setValueAtTime(0.0001, now);
+          g.gain.exponentialRampToValueAtTime(peak, now + v.attack);
+          g.gain.exponentialRampToValueAtTime(0.0001, now + v.attack + decay);
+          osc.connect(g);
+          g.connect(this.master);
+          osc.start(now);
+          osc.stop(now + v.attack + decay + 0.05);
+        }
+        return true;
+      },
+    };
+
+    /* =========================================================
+       5. 선: 짧은 선분 배열. 좌표는 화면 비율(0~1)로 저장해 화면 크기가 바뀌어도 유지
+       ========================================================= */
+    function buildSegs(stroke) {
+      const old = stroke.segs || [];
+      stroke.segs = [];
+      for (let i = 1; i < stroke.pts.length; i++) {
+        const a = stroke.pts[i - 1];
+        const b = stroke.pts[i];
+        const x1 = a.x * W;
+        const y1 = a.y * H;
+        const x2 = b.x * W;
+        const y2 = b.y * H;
+        const dx = x2 - x1;
+        const dy = y2 - y1;
+        const len2 = dx * dx + dy * dy;
+        if (len2 < 1) continue;
+        const len = Math.sqrt(len2);
+        // 위를 향하는 법선 (눈이 쌓이는 쪽)
+        let ux = -dy / len;
+        let uy = dx / len;
+        if (uy > 0) { ux = -ux; uy = -uy; }
+        stroke.segs.push({
+          x1, y1, x2, y2, dx, dy, len2, ux, uy,
+          flat: Math.abs(uy), // 1이면 수평, 0이면 수직
+          minx: Math.min(x1, x2), maxx: Math.max(x1, x2), miny: Math.min(y1, y2), maxy: Math.max(y1, y2),
+          pile: old[stroke.segs.length] ? old[stroke.segs.length].pile : 0,
+          stroke,
+        });
+      }
+    }
+
+    function addStroke(pts) {
+      const stroke = { pts, segs: [] };
+      buildSegs(stroke);
+      S.strokes.push(stroke);
+      // 너무 많아지면 오래된 선부터 지운다
+      let total = S.strokes.reduce((n, s) => n + s.pts.length, 0);
+      while (total > 1600 && S.strokes.length > 1) {
+        total -= S.strokes.shift().pts.length;
+      }
+      return stroke;
+    }
+
+    // 선을 단순하게 (점 수 줄이기, 공유 링크를 짧게): Ramer–Douglas–Peucker
+    function simplify(pts, eps) {
+      if (pts.length < 3) return pts;
+      const [a, b] = [pts[0], pts[pts.length - 1]];
+      let maxD = 0;
+      let idx = 0;
+      for (let i = 1; i < pts.length - 1; i++) {
+        const p = pts[i];
+        const dx = (b.x - a.x) * W;
+        const dy = (b.y - a.y) * H;
+        const L = Math.hypot(dx, dy) || 1;
+        const d = Math.abs(dy * (p.x - a.x) * W - dx * (p.y - a.y) * H) / L;
+        if (d > maxD) { maxD = d; idx = i; }
+      }
+      if (maxD <= eps) return [a, b];
+      return simplify(pts.slice(0, idx + 1), eps).slice(0, -1).concat(simplify(pts.slice(idx), eps));
+    }
+
+    /* =========================================================
+       6. 내리는 것 만들기 (눈 · 빗방울 · 낙엽)
+       ========================================================= */
+    function spawn() {
+      const th = THEMES[S.theme];
+      const base = { x: between(-0.15, 1.15) * W - S.wind * 0.25 * W, y: -20, rest: 0, lastHit: -9, rot: between(0, Math.PI * 2) };
+      if (S.theme === 'rain') {
+        return { ...base, kind: 'drop', r: between(1.2, 2), vx: S.wind * 120, vy: between(th.fall[0], th.fall[1]), term: between(th.fall[0], th.fall[1]), len: between(9, 16), sway: 0, swayF: 0, phase: 0, spin: 0 };
+      }
+      if (S.theme === 'leaf') {
+        const r = between(5, 9);
+        return { ...base, kind: 'leaf', r, sprite: makeLeafSprite(r), vx: 0, vy: between(20, 40), term: between(th.fall[0], th.fall[1]), sway: between(30, 70), swayF: between(0.8, 1.8), phase: between(0, 6.28), spin: between(-2.5, 2.5) };
+      }
+      const r = between(2.6, 5.2); // 지름 약 5~10px
+      return { ...base, kind: 'flake', r, sprite: makeFlakeSprite(r), vx: 0, vy: between(20, 40), term: between(th.fall[0], th.fall[1]) * (0.75 + r / 10), sway: between(6, 18), swayF: between(0.6, 1.6), phase: between(0, 6.28), spin: between(-0.8, 0.8) };
+    }
+
+    /* =========================================================
+       7. 한 걸음 움직이기: 바람 · 충돌 · 소리 · 쌓이기
+       ========================================================= */
+    function hitSound(x, y, impact, f) {
+      const th = THEMES[S.theme];
+      const vel = clamp(impact / (S.theme === 'rain' ? 380 : 110), 0.25, 1);
+      const midi = noteForY(y, th.shift);
+      if (sound.play(midi, vel, th.voice)) {
+        S.rings.push({ x, y, age: 0, life: 0.55, hue: (midi % 12) * 30, size: 8 + vel * 10 });
+        if (f.kind === 'drop') for (let i = 0; i < 3; i++) S.powder.push({ x, y, vx: between(-40, 40), vy: between(-90, -30), age: 0, life: 0.35, r: 1.2, color: '190,220,255' });
+      }
+    }
+
+    function dropClump(seg) {
+      const amount = seg.pile;
+      seg.pile = 0;
+      const mx = (seg.x1 + seg.x2) / 2 + seg.ux * 3;
+      const my = (seg.y1 + seg.y2) / 2 + seg.uy * 3;
+      S.clumps.push({ x: mx, y: my, vx: S.wind * 20, vy: 10, r: 3 + amount * 0.7, age: 0, from: seg.stroke });
+      // 눈 덩어리는 낮은 음 (한 옥타브 아래, 길게)
+      sound.play(noteForY(my, -12), 0.9, 'low', true);
+      S.rings.push({ x: mx, y: my, age: 0, life: 0.9, hue: 220, size: 22 });
+    }
+
+    function collide(p, radius, onHit) {
+      let touched = null;
+      for (const stroke of S.strokes) {
+        for (const seg of stroke.segs) {
+          if (p.x < seg.minx - radius || p.x > seg.maxx + radius || p.y < seg.miny - radius || p.y > seg.maxy + radius) continue;
+          const t = clamp(((p.x - seg.x1) * seg.dx + (p.y - seg.y1) * seg.dy) / seg.len2, 0, 1);
+          const cx = seg.x1 + seg.dx * t;
+          const cy = seg.y1 + seg.dy * t;
+          const ddx = p.x - cx;
+          const ddy = p.y - cy;
+          const d2 = ddx * ddx + ddy * ddy;
+          if (d2 >= radius * radius) continue;
+          const d = Math.sqrt(d2) || 0.001;
+          const nx = d2 > 0.000001 ? ddx / d : seg.ux;
+          const ny = d2 > 0.000001 ? ddy / d : seg.uy;
+          const vn = p.vx * nx + p.vy * ny;
+          if (vn < 0) onHit(seg, nx, ny, vn, cx, cy);
+          // 선 밖으로 밀어내기
+          p.x = cx + nx * radius;
+          p.y = cy + ny * radius;
+          touched = seg;
+        }
+      }
+      return touched;
+    }
+
+    function step(dt) {
+      S.time += dt;
+      const th = THEMES[S.theme];
+
+      // 새로 내리기
+      S.spawnAcc += dt * (th.rate[0] + (th.rate[1] - th.rate[0]) * S.amount);
+      while (S.spawnAcc >= 1) {
+        S.spawnAcc -= 1;
+        if (S.flakes.length < 320) S.flakes.push(spawn());
+      }
+
+      // 움직이기
+      for (let i = S.flakes.length - 1; i >= 0; i--) {
+        const f = S.flakes[i];
+        // 떨어지는 속도는 끝속도(term)에 가까워지고, 옆으로는 바람 + 살랑임
+        f.vy += (f.term - f.vy) * 1.6 * dt;
+        const targetVx = S.wind * (f.kind === 'drop' ? 140 : 80) + Math.sin(S.time * f.swayF + f.phase) * f.sway;
+        f.vx += (targetVx - f.vx) * 1.4 * dt;
+        f.x += f.vx * dt;
+        f.y += f.vy * dt;
+        f.rot += f.spin * dt;
+
+        const radius = f.kind === 'drop' ? 2 : f.r * 0.8;
+        const touched = collide(f, radius, (seg, nx, ny, vn, cx, cy) => {
+          const impact = -vn;
+          // 선 방향(접선) 속도는 살리고, 수직 속도는 조금만 튕긴다 → 기울어진 선에선 미끄러짐
+          const tx = -ny;
+          const ty = nx;
+          const vt = (f.vx * tx + f.vy * ty) * th.friction;
+          f.vx = tx * vt + nx * impact * th.bounce;
+          f.vy = ty * vt + ny * impact * th.bounce;
+          if (impact > 14 && S.time - f.lastHit > 0.28) {
+            f.lastHit = S.time;
+            hitSound(cx, cy, impact, f);
+          }
+          if (f.kind === 'drop') f.dead = true; // 빗방울은 닿으면 튀며 사라짐
+        });
+
+        // 눈 쌓이기: 평평한 선 위에서 거의 멈추면 선에 붙는다
+        if (touched && th.piles && touched.flat > 0.72 && Math.hypot(f.vx, f.vy) < 20) {
+          f.rest += dt;
+          f.vx *= 0.9;
+          if (f.rest > 0.35) {
+            touched.pile += 1;
+            f.dead = true;
+            if (touched.pile >= S.pileMax) dropClump(touched);
+          }
+        } else if (!touched) {
+          f.rest = 0;
+        }
+
+        if (f.dead || f.y > H + 30 || f.x < -W * 0.4 || f.x > W * 1.4) S.flakes.splice(i, 1);
+      }
+
+      // 떨어지는 눈 덩어리: 아래 선에 부딪히면 부서지며 낮은 음
+      for (let i = S.clumps.length - 1; i >= 0; i--) {
+        const c = S.clumps[i];
+        c.age += dt;
+        c.vy += 520 * dt;
+        c.vx += (S.wind * 40 - c.vx) * dt;
+        c.x += c.vx * dt;
+        c.y += c.vy * dt;
+        let burst = false;
+        if (c.age > 0.12) {
+          collide(c, c.r, (seg, nx, ny, vn, cx, cy) => {
+            if (seg.stroke === c.from && c.age < 0.4) return;
+            burst = true;
+            sound.play(noteForY(cy, -12), 0.8, 'low', true);
+            S.rings.push({ x: cx, y: cy, age: 0, life: 0.8, hue: 210, size: 18 });
+          });
+        }
+        if (burst) {
+          for (let k = 0; k < 12; k++) S.powder.push({ x: c.x, y: c.y, vx: between(-70, 70), vy: between(-110, -20), age: 0, life: between(0.5, 0.9), r: between(1, 2.4), color: '255,255,255' });
+          S.clumps.splice(i, 1);
+        } else if (c.y > H + 40) {
+          S.clumps.splice(i, 1);
+        }
+      }
+
+      for (let i = S.powder.length - 1; i >= 0; i--) {
+        const p = S.powder[i];
+        p.age += dt;
+        p.vy += 260 * dt;
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        if (p.age > p.life) S.powder.splice(i, 1);
+      }
+      for (let i = S.rings.length - 1; i >= 0; i--) {
+        S.rings[i].age += dt;
+        if (S.rings[i].age > S.rings[i].life) S.rings.splice(i, 1);
+      }
+    }
+
+    /* =========================================================
+       8. 그리기
+       ========================================================= */
+    function drawStroke(pts, th) {
+      if (pts.length < 2) return;
+      ctx.beginPath();
+      ctx.moveTo(pts[0].x * W, pts[0].y * H);
+      for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x * W, pts[i].y * H);
+      ctx.strokeStyle = th.glow;
+      ctx.lineWidth = 8;
+      ctx.stroke();
+      ctx.strokeStyle = th.line;
+      ctx.lineWidth = 2.4;
+      ctx.stroke();
+    }
+
+    function draw() {
+      const th = THEMES[S.theme];
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.fillStyle = skyGradient;
+      ctx.fillRect(0, 0, W, H);
+
+      if (th.stars) {
+        for (const s of stars) {
+          ctx.globalAlpha = s.a * (0.75 + 0.25 * Math.sin(S.time * 1.3 + s.x));
+          ctx.fillStyle = '#fff';
+          ctx.fillRect(s.x, s.y, s.s, s.s);
+        }
+        ctx.globalAlpha = 1;
+      }
+
+      for (const s of S.strokes) drawStroke(s.pts, th);
+      if (S.drawing) drawStroke(S.drawing.pts, th);
+
+      // 쌓인 눈: 선 위쪽으로 두툼하게
+      ctx.strokeStyle = 'rgba(244, 248, 255, 0.96)';
+      for (const s of S.strokes) {
+        for (const seg of s.segs) {
+          if (seg.pile <= 0) continue;
+          const h = 1.5 + seg.pile * 1.4;
+          ctx.lineWidth = h;
+          ctx.beginPath();
+          ctx.moveTo(seg.x1 + seg.ux * h * 0.5, seg.y1 + seg.uy * h * 0.5);
+          ctx.lineTo(seg.x2 + seg.ux * h * 0.5, seg.y2 + seg.uy * h * 0.5);
+          ctx.stroke();
+        }
+      }
+
+      // 닿은 자리의 빛 동그라미
+      for (const r of S.rings) {
+        const k = r.age / r.life;
+        ctx.beginPath();
+        ctx.arc(r.x, r.y, r.size * (0.4 + k), 0, Math.PI * 2);
+        ctx.strokeStyle = `hsla(${r.hue}, 90%, 82%, ${(1 - k) * 0.8})`;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      }
+
+      // 내리는 것
+      for (const f of S.flakes) {
+        if (f.kind === 'drop') {
+          const sp = Math.hypot(f.vx, f.vy) || 1;
+          ctx.strokeStyle = 'rgba(180, 215, 255, 0.7)';
+          ctx.lineWidth = 1.4;
+          ctx.beginPath();
+          ctx.moveTo(f.x, f.y);
+          ctx.lineTo(f.x - (f.vx / sp) * f.len, f.y - (f.vy / sp) * f.len);
+          ctx.stroke();
+          continue;
+        }
+        const s = f.sprite.width / DPR;
+        ctx.save();
+        ctx.translate(f.x, f.y);
+        ctx.rotate(f.rot);
+        if (f.kind === 'leaf') ctx.scale(1, 0.6 + 0.4 * Math.abs(Math.sin(S.time * 2 + f.phase)));
+        ctx.drawImage(f.sprite, -s / 2, -s / 2, s, s);
+        ctx.restore();
+      }
+
+      // 눈 덩어리 · 가루
+      ctx.fillStyle = 'rgba(248, 251, 255, 0.97)';
+      for (const c of S.clumps) {
+        ctx.beginPath();
+        ctx.arc(c.x, c.y, c.r, 0, Math.PI * 2);
+        ctx.arc(c.x + c.r * 0.6, c.y - c.r * 0.3, c.r * 0.7, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      for (const p of S.powder) {
+        ctx.fillStyle = `rgba(${p.color}, ${1 - p.age / p.life})`;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // 영상용: 선을 긋는 손끝
+      if (S.pen) {
+        ctx.beginPath();
+        ctx.arc(S.pen.x * W, S.pen.y * H, 9, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(255,255,255,0.85)';
+        ctx.shadowColor = 'rgba(200,220,255,1)';
+        ctx.shadowBlur = 14;
+        ctx.fill();
+        ctx.shadowBlur = 0;
+      }
+    }
+
+    /* =========================================================
+       9. 입력: 드래그로 선 긋기
+       ========================================================= */
+    function toNorm(ev) {
+      return { x: clamp(ev.clientX / W, 0, 1), y: clamp(ev.clientY / H, 0, 1) };
+    }
+
+    canvas.addEventListener('pointerdown', (ev) => {
+      if (!S.started) begin();
+      canvas.setPointerCapture(ev.pointerId);
+      S.drawing = { id: ev.pointerId, pts: [toNorm(ev)] };
+    });
+
+    canvas.addEventListener('pointermove', (ev) => {
+      if (!S.drawing || S.drawing.id !== ev.pointerId) return;
+      const p = toNorm(ev);
+      const last = S.drawing.pts[S.drawing.pts.length - 1];
+      if (Math.hypot((p.x - last.x) * W, (p.y - last.y) * H) >= 6) S.drawing.pts.push(p);
+    });
+
+    function endDraw(ev) {
+      if (!S.drawing || S.drawing.id !== ev.pointerId) return;
+      const pts = simplify(S.drawing.pts, 1.5);
+      S.drawing = null;
+      if (pts.length >= 2) {
+        addStroke(pts);
+        hideBadge();
+      }
+    }
+    canvas.addEventListener('pointerup', endDraw);
+    canvas.addEventListener('pointercancel', endDraw);
+
+    /* =========================================================
+       10. 조작 막대
+       ========================================================= */
+    function setTheme(name) {
+      S.theme = name;
+      for (const b of document.querySelectorAll('.theme-btn')) b.setAttribute('aria-pressed', String(b.dataset.theme === name));
+      $('amount-icon').textContent = THEMES[name].icon;
+      S.flakes = [];
+      S.clumps = [];
+      for (const s of S.strokes) for (const seg of s.segs) seg.pile = 0;
+      makeSky();
+      prefill();
+    }
+
+    // 처음부터 하늘 전체에 눈이 내리고 있도록 미리 뿌려 둔다
+    function prefill() {
+      const th = THEMES[S.theme];
+      const rate = th.rate[0] + (th.rate[1] - th.rate[0]) * S.amount;
+      const count = Math.min(300, Math.round(rate * (H / ((th.fall[0] + th.fall[1]) / 2))));
+      for (let i = 0; i < count; i++) {
+        const f = spawn();
+        f.y = rand() * H;
+        f.vy = f.term;
+        S.flakes.push(f);
+      }
+    }
+
+    for (const b of document.querySelectorAll('.theme-btn')) {
+      b.addEventListener('click', () => {
+        setTheme(b.dataset.theme);
+        toast(`${THEMES[b.dataset.theme].icon} ${THEMES[b.dataset.theme].label}`);
+      });
+    }
+
+    $('wind').addEventListener('input', (ev) => { S.wind = Number(ev.target.value); });
+    $('amount').addEventListener('input', (ev) => { S.amount = Number(ev.target.value); });
+    $('undo').addEventListener('click', () => { S.strokes.pop(); });
+    $('clear').addEventListener('click', () => {
+      S.strokes = [];
+      S.clumps = [];
+      toast('선을 모두 지웠어요. 새로 그어 보세요');
+    });
+    $('mute').addEventListener('click', () => {
+      S.muted = !S.muted;
+      $('mute').textContent = S.muted ? '🔇' : '🔊';
+      $('mute').setAttribute('aria-label', S.muted ? '소리 켜기' : '소리 끄기');
+      sound.setMuted(S.muted);
+    });
+
+    $('help-btn').addEventListener('click', () => $('help').showModal());
+    $('help-close').addEventListener('click', () => $('help').close());
+    $('help').addEventListener('click', (ev) => { if (ev.target === $('help')) $('help').close(); });
+
+    /* =========================================================
+       11. 눈 악보 공유: 그린 선을 주소(# 뒤)에 담는다
+           점 하나 = x, y를 0~4095로 바꿔 글자 2개씩 (base64url)
+       ========================================================= */
+    const B64 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
+    const enc12 = (v) => B64[(v >> 6) & 63] + B64[v & 63];
+
+    function encodeScore() {
+      return S.strokes.map((s) => simplify(s.pts, 2.5)
+        .map((p) => enc12(Math.round(p.x * 4095)) + enc12(Math.round(p.y * 4095))).join('')).join('.');
+    }
+
+    function decodeScore(str) {
+      const out = [];
+      for (const part of str.split('.')) {
+        if (!/^[A-Za-z0-9_-]+$/.test(part) || part.length % 4 !== 0) continue;
+        const pts = [];
+        for (let i = 0; i < part.length; i += 4) {
+          const v = (j) => (B64.indexOf(part[i + j]) << 6) | B64.indexOf(part[i + j + 1]);
+          pts.push({ x: v(0) / 4095, y: v(2) / 4095 });
+        }
+        if (pts.length >= 2) out.push(pts);
+      }
+      return out.slice(0, 60);
+    }
+
+    $('share').addEventListener('click', async () => {
+      if (!S.strokes.length) { toast('먼저 선을 그어 보세요'); return; }
+      let data = encodeScore();
+      if (data.length > 6000) { toast('선이 너무 많아서 공유할 수 없어요. 조금 지워 주세요'); return; }
+      const url = `https://${SITE_URL}/games/snow-music-box/#t=${S.theme}&l=${data}`;
+      const text = '❄️🎵 내가 그린 눈 악보예요. 눈이 어떤 멜로디를 만드는지 들어 보세요';
+      const isTouch = window.matchMedia('(pointer: coarse)').matches;
+      if (isTouch && navigator.share) {
+        try { await navigator.share({ title: '눈송이 오르골', text, url }); return; } catch (e) { if (e && e.name === 'AbortError') return; }
+      }
+      try {
+        await navigator.clipboard.writeText(url);
+        toast('눈 악보 링크를 복사했어요');
+      } catch (e) {
+        window.prompt('아래 링크를 복사해 주세요', url);
+      }
+    });
+
+    /* =========================================================
+       12. 시작: 처음 보여 줄 선 (공유받은 악보가 있으면 그것)
+       ========================================================= */
+    function curve(fn, n) {
+      return Array.from({ length: n + 1 }, (_, i) => fn(i / n));
+    }
+
+    function demoScore() {
+      return [
+        // 왼쪽 위 나뭇가지 (살짝 아래로)
+        curve((t) => ({ x: 0.05 + t * 0.42, y: 0.3 + t * 0.07 + Math.sin(t * 3) * 0.012 }), 14),
+        // 가운데 지붕
+        [{ x: 0.42, y: 0.58 }, { x: 0.6, y: 0.48 }, { x: 0.78, y: 0.58 }],
+        // 오른쪽 아래 전깃줄 (처짐)
+        curve((t) => ({ x: 0.08 + t * 0.62, y: 0.74 + Math.sin(t * Math.PI) * 0.05 }), 16),
+      ];
+    }
+
+    function hideBadge() {
+      const b = $('badge');
+      if (!b.hidden) { b.style.opacity = 0; setTimeout(() => { b.hidden = true; }, 600); }
+    }
+
+    function loadInitial() {
+      const hash = new URLSearchParams(location.hash.slice(1));
+      const shared = hash.get('l') ? decodeScore(hash.get('l')) : [];
+      if (THEMES[hash.get('t')]) setTheme(hash.get('t'));
+      else setTheme('snow');
+      if (shared.length) {
+        shared.forEach(addStroke);
+        $('badge').textContent = '🎼 친구가 보낸 눈 악보';
+      } else {
+        demoScore().forEach(addStroke);
+        $('badge').textContent = '✍️ 드래그해서 선을 더 그어 보세요';
+      }
+      $('badge').hidden = false;
+    }
+
+    function begin() {
+      if (S.started) return;
+      S.started = true;
+      sound.start();
+      $('start').hidden = true;
+    }
+
+    $('start').addEventListener('pointerdown', (ev) => { ev.preventDefault(); begin(); });
+    $('start').addEventListener('keydown', (ev) => { if (ev.key === 'Enter' || ev.key === ' ') begin(); });
+
+    // 다른 앱으로 나갔다 오면 오디오가 멈춰 있을 수 있다
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden && S.started) sound.start();
+    });
+
+    /* =========================================================
+       13. 반복 실행 (영상 모드는 바깥에서 한 칸씩)
+       ========================================================= */
+    let last = 0;
+    function loop(t) {
+      const dt = Math.min(0.05, (t - (last || t)) / 1000);
+      last = t;
+      step(dt / 2);
+      step(dt / 2);
+      draw();
+      requestAnimationFrame(loop);
+    }
+
+    window.addEventListener('resize', resize);
+    resize();
+
+    if (isFrame) {
+      document.body.classList.add('frame');
+      S.started = true;
+      S.amount = 0.7;
+      setTheme('snow'); // 하늘 전체에 눈을 미리 뿌린다
+      const no = Number(params.get('c')) || 0;
+      if (no) {
+        $('frame-tag').textContent = `도전 #${no}`;
+        $('frame-cta-text').textContent = `프로필 링크에서 도전 #${no} 직접 연주하기`;
+      }
+      // 영상 만드는 프로그램이 부르는 함수들
+      window.__frame = {
+        prewarm(seconds) { for (let t = 0; t < seconds; t += 1 / 60) step(1 / 60); sound.notes.length = 0; S.time = 0; sound.lastTime = 0; sound.lastLow = -9; },
+        step(dt) { const n = Math.max(1, Math.round(dt * 60)); for (let i = 0; i < n; i++) step(dt / n); draw(); },
+        penTo(x, y, newStroke) {
+          if (newStroke || !S.drawing) S.drawing = { id: 'pen', pts: [] };
+          S.drawing.pts.push({ x, y });
+          S.pen = { x, y };
+        },
+        penUp() {
+          if (S.drawing && S.drawing.pts.length >= 2) addStroke(simplify(S.drawing.pts, 1.2));
+          S.drawing = null;
+          S.pen = null;
+        },
+        notes: sound.notes,
+      };
+      draw();
+      document.body.dataset.ready = '1';
+    } else {
+      loadInitial();
+      requestAnimationFrame(loop);
+    }
+  })();
+  </script>
+</body>
+</html>
