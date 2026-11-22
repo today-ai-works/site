@@ -21,4 +21,11 @@ window.TAW_CHALLENGES = [
     date: '2026-11-22',
     desc: '선을 그으면 눈이 노래해요 · 소설(小雪) 기념',
   },
+  {
+    no: 3,
+    game: '수육 도둑',
+    url: '/games/suyuk-thief/',
+    date: '2026-11-22',
+    desc: '김장날 잠입 작전 · 수육 5점 먹을 수 있을까?',
+  },
 ];
