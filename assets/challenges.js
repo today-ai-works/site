@@ -28,4 +28,11 @@ window.TAW_CHALLENGES = [
     date: '2026-11-22',
     desc: '김장날 잠입 작전 · 수육 5점 먹을 수 있을까?',
   },
+  {
+    no: 4,
+    game: '김장 컨베이어 대소동',
+    url: '/games/kimjang-conveyor/',
+    date: '2026-11-23',
+    desc: '소금 → 양념 → 담기 · 김장 장인(100포기) 될 수 있을까?',
+  },
 ];
