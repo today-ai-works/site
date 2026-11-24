@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>김장 품앗이 정산기 — 재료량 · 장보기 · 송금까지 한 번에 | 오늘의 AI 작품</title>
+  <meta name="description" content="배추 포기 수만 넣으면 양념 재료량, 장보기 담당, 가족별 몫과 누가 누구에게 얼마 보내면 되는지까지 정리해 주는 김장 정산 도구. 설치 · 가입 없이 휴대폰에서 바로.">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="김장 품앗이 정산기">
+  <meta property="og:description" content="배추 포기 수만 넣으면 재료량 · 장보기 · 가족별 몫 · 송금 목록까지 한 번에.">
+  <meta property="og:url" content="https://today-ai-works.pages.dev/tools/kimjang-split/">
+  <link rel="canonical" href="https://today-ai-works.pages.dev/tools/kimjang-split/">
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+  <style>
+    /* =========================================================
+       1. 색과 기본 배치 (모바일 우선, 카드형)
+       ========================================================= */
+    :root {
+      --green: #7cb342;
+      --green-dark: #558b2f;
+      --green-soft: #eef6e4;
+      --red: #c62828;
+      --red-soft: #fdecea;
+      --ink: #23261f;
+      --muted: #6e6f68;
+      --line: #e6e2d8;
+      --paper: #fbf8f1;
+      --card: #ffffff;
+      color-scheme: light;
+    }
+
+    * { box-sizing: border-box; }
+
+    html { -webkit-text-size-adjust: 100%; }
+
+    body {
+      margin: 0;
+      background: var(--paper);
+      color: var(--ink);
+      font-family: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+      line-height: 1.5;
+      word-break: keep-all;
+    }
+
+    .wrap { max-width: 640px; margin: 0 auto; padding: 0 14px 40px; }
+
+    .topbar { display: flex; justify-content: space-between; align-items: center; padding: 12px 0 4px; font-size: 0.88rem; }
+    .topbar a { color: var(--muted); text-decoration: none; }
+
+    header.hero { padding: 10px 2px 14px; }
+    header.hero h1 { margin: 0; font-size: 1.55rem; font-weight: 900; letter-spacing: -0.01em; }
+    header.hero h1 span { color: var(--green-dark); }
+    header.hero p { margin: 4px 0 0; color: var(--muted); font-size: 0.95rem; }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 16px 14px;
+      margin-bottom: 12px;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+    }
+
+    .card h2 { margin: 0 0 10px; font-size: 1.08rem; font-weight: 900; display: flex; align-items: center; gap: 6px; }
+    .card h2 .step { display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: var(--green); color: #fff; font-size: 0.8rem; }
+    .card .sub { margin: -6px 0 10px; color: var(--muted); font-size: 0.85rem; }
+
+    label.field { display: block; font-size: 0.85rem; color: var(--muted); font-weight: 700; }
+
+    input[type="number"], input[type="text"], input[type="time"], select {
+      font: inherit;
+      color: var(--ink);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 8px 10px;
+      background: #fff;
+      min-width: 0;
+    }
+
+    input:focus, select:focus { outline: 2px solid var(--green); outline-offset: 0; border-color: var(--green); }
+
+    /* 포기 수 크게 */
+    .heads { display: flex; align-items: center; gap: 8px; margin: 6px 0 12px; }
+    .heads input { width: 96px; font-size: 1.6rem; font-weight: 900; text-align: center; padding: 6px; }
+    .heads .unit { font-weight: 800; font-size: 1.1rem; }
+    .round { width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--line); background: #fff; font-size: 1.4rem; font-weight: 800; cursor: pointer; color: var(--ink); }
+    .round:active { transform: scale(0.95); }
+
+    .seg { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+    .seg button { font: inherit; font-weight: 800; padding: 9px 4px; border-radius: 12px; border: 1px solid var(--line); background: #fff; cursor: pointer; color: var(--ink); }
+    .seg button[aria-pressed="true"] { background: var(--red); border-color: var(--red); color: #fff; }
+
+    /* 재료 표 */
+    .items { display: grid; gap: 6px; }
+    .item { display: grid; grid-template-columns: 26px 1fr auto; gap: 4px 8px; align-items: center; padding: 8px 10px; border: 1px solid var(--line); border-radius: 12px; background: #fff; }
+    .item.done { background: var(--green-soft); }
+    .item.done .name { text-decoration: line-through; color: var(--muted); }
+    .item input[type="checkbox"] { width: 20px; height: 20px; accent-color: var(--green-dark); }
+    .item .name { font-weight: 800; }
+    .item .amt { font-weight: 900; color: var(--red); text-align: right; white-space: nowrap; }
+    .item .cost { grid-column: 2; color: var(--muted); font-size: 0.8rem; }
+    .item select { grid-column: 3; font-size: 0.82rem; padding: 4px 6px; }
+    .item .edit { grid-column: 1 / -1; display: none; gap: 6px; align-items: center; font-size: 0.8rem; color: var(--muted); flex-wrap: wrap; }
+    .editing .item .edit { display: flex; }
+    .item .edit input { width: 84px; padding: 5px 7px; font-size: 0.85rem; }
+    .total-line { display: flex; justify-content: space-between; margin-top: 10px; font-weight: 800; }
+    .total-line span:last-child { color: var(--red); }
+
+    .linkbtn { font: inherit; font-size: 0.85rem; font-weight: 700; color: var(--green-dark); background: none; border: 0; padding: 4px 0; cursor: pointer; text-decoration: underline; }
+
+    /* 가족 카드 */
+    .families { display: grid; gap: 8px; }
+    .family { border: 1px solid var(--line); border-radius: 14px; padding: 10px; background: #fff; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .family .name-row { grid-column: 1 / -1; display: flex; gap: 6px; }
+    .family .name-row input { flex: 1; font-weight: 800; }
+    .family .del { border: 0; background: var(--red-soft); color: var(--red); border-radius: 10px; padding: 0 12px; font: inherit; font-weight: 800; cursor: pointer; }
+    .family label.field input { width: 100%; margin-top: 3px; }
+    .family .tub { grid-column: 1 / -1; font-size: 0.8rem; color: var(--muted); }
+    .add { width: 100%; margin-top: 8px; padding: 11px; border-radius: 12px; border: 1px dashed var(--green-dark); background: var(--green-soft); color: var(--green-dark); font: inherit; font-weight: 800; cursor: pointer; }
+    .warn { margin-top: 8px; padding: 8px 10px; border-radius: 10px; background: #fff6d8; color: #7a5a00; font-size: 0.88rem; font-weight: 700; }
+    .warn[hidden] { display: none; }
+
+    /* 정산 */
+    .sum-big { font-size: 1.7rem; font-weight: 900; }
+    .sum-big small { font-size: 0.95rem; color: var(--muted); font-weight: 700; }
+    table.share { width: 100%; border-collapse: collapse; margin: 10px 0 4px; font-size: 0.9rem; }
+    table.share th, table.share td { padding: 7px 4px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; }
+    table.share th:first-child, table.share td:first-child { text-align: left; }
+    table.share th { color: var(--muted); font-size: 0.78rem; font-weight: 700; }
+    .plus { color: var(--green-dark); font-weight: 800; }
+    .minus { color: var(--red); font-weight: 800; }
+    .transfers { display: grid; gap: 6px; margin-top: 10px; }
+    .transfer { display: flex; align-items: center; gap: 8px; padding: 11px 12px; border-radius: 14px; background: var(--red-soft); font-weight: 800; }
+    .transfer .arrow { color: var(--red); }
+    .transfer .money { margin-left: auto; color: var(--red); font-size: 1.1rem; font-weight: 900; }
+    .empty { color: var(--muted); font-size: 0.9rem; padding: 6px 0; }
+
+    /* 버튼 */
+    .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
+    .btn { font: inherit; font-weight: 900; padding: 13px 10px; border-radius: 14px; border: 1px solid var(--line); background: #fff; color: var(--ink); cursor: pointer; }
+    .btn.primary { grid-column: 1 / -1; background: var(--green-dark); border-color: var(--green-dark); color: #fff; font-size: 1.02rem; }
+    .btn:active { transform: scale(0.98); }
+
+    .timer-row { display: flex; gap: 8px; align-items: end; flex-wrap: wrap; }
+    .timer-row label.field select, .timer-row label.field input { display: block; margin-top: 3px; }
+    .times { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+    .times div { padding: 10px; border-radius: 12px; background: var(--green-soft); text-align: center; }
+    .times b { display: block; font-size: 1.3rem; font-weight: 900; }
+    .times span { font-size: 0.8rem; color: var(--muted); }
+
+    .toast { position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom)); transform: translate(-50%, 20px); background: var(--ink); color: #fff; padding: 10px 16px; border-radius: 999px; font-weight: 800; font-size: 0.9rem; opacity: 0; transition: 0.2s ease; pointer-events: none; z-index: 10; }
+    .toast.on { opacity: 1; transform: translate(-50%, 0); }
+
+    .note { color: var(--muted); font-size: 0.8rem; margin-top: 8px; }
+    footer { text-align: center; color: var(--muted); font-size: 0.8rem; padding: 18px 0 30px; }
+    footer a { color: inherit; margin: 0 5px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="topbar"><a href="/">← 오늘의 AI 작품</a><button type="button" class="linkbtn" id="reset-btn">처음부터</button></div>
+
+    <header class="hero">
+      <h1>🥬 김장 품앗이 <span>정산기</span></h1>
+      <p>포기 수만 넣으면 재료량 · 장보기 · 송금까지 한 번에</p>
+    </header>
+
+    <!-- 1. 김장 정보 -->
+    <section class="card">
+      <h2><span class="step">1</span>몇 포기 담가요?</h2>
+      <div class="heads">
+        <button type="button" class="round" id="heads-minus" aria-label="한 포기 빼기">−</button>
+        <input type="number" id="heads" min="1" max="999" inputmode="numeric" aria-label="배추 포기 수">
+        <span class="unit">포기</span>
+        <button type="button" class="round" id="heads-plus" aria-label="한 포기 더하기">+</button>
+      </div>
+      <label class="field">맵기 (고춧가루 양)</label>
+      <div class="seg" id="spicy" role="group" aria-label="맵기">
+        <button type="button" data-v="mild">순한맛</button>
+        <button type="button" data-v="normal">보통</button>
+        <button type="button" data-v="hot">매운맛 🌶️</button>
+      </div>
+    </section>
+
+    <!-- 2. 재료 · 장보기 -->
+    <section class="card" id="recipe-card">
+      <h2><span class="step">2</span>재료 · 장보기</h2>
+      <p class="sub">담당 가족을 정하고, 산 재료는 체크하세요.</p>
+      <div class="items" id="items"></div>
+      <div class="total-line"><span>예상 재료비</span><span id="est-total"></span></div>
+      <button type="button" class="linkbtn" id="edit-btn">우리 집 레시피로 고치기 (10포기 기준 양 · 값)</button>
+      <p class="note">기본값은 대략적인 예시예요. 집집마다 다르니 고쳐 쓰세요.</p>
+    </section>
+
+    <!-- 3. 가족 -->
+    <section class="card">
+      <h2><span class="step">3</span>참여 가족</h2>
+      <p class="sub">가져갈 포기 수와 실제로 장 본 금액을 넣어요.</p>
+      <div class="families" id="families"></div>
+      <div class="warn" id="heads-warn" hidden></div>
+      <button type="button" class="add" id="add-family">+ 가족 추가</button>
+    </section>
+
+    <!-- 4. 정산 -->
+    <section class="card" id="settle-card">
+      <h2><span class="step">4</span>정산 결과</h2>
+      <div class="sum-big" id="paid-total"></div>
+      <table class="share">
+        <thead><tr><th>가족</th><th>포기</th><th>몫</th><th>낸 돈</th><th>차액</th></tr></thead>
+        <tbody id="share-rows"></tbody>
+      </table>
+      <div class="transfers" id="transfers"></div>
+      <div class="actions">
+        <button type="button" class="btn primary" id="copy-btn">💬 단톡방용 요약 복사</button>
+        <button type="button" class="btn" id="share-btn">🔗 링크로 공유</button>
+        <button type="button" class="btn" id="copy-shop-btn">🛒 장보기만 복사</button>
+      </div>
+      <p class="note">몫 = 총 장본 금액 × (가져갈 포기 ÷ 전체 포기). 송금은 큰 금액끼리 먼저 짝지어 횟수를 줄였어요.</p>
+    </section>
+
+    <!-- 5. 절임 타이머 -->
+    <section class="card">
+      <h2><span class="step">5</span>절임 시간 계산</h2>
+      <div class="timer-row">
+        <label class="field">절이기 시작<input type="time" id="salt-start"></label>
+        <label class="field">절이는 시간<select id="salt-hours"><option value="8">8시간</option><option value="10">10시간</option><option value="12">12시간</option></select></label>
+      </div>
+      <div class="times" id="salt-times"></div>
+      <p class="note">한여름 · 한겨울, 배추 크기에 따라 달라요. 줄기를 꺾어 휘어지면 다 절여진 거예요.</p>
+    </section>
+
+    <footer>
+      <a href="/">오늘의 AI 작품</a>·<a href="/privacy/">개인정보처리방침</a>·<a href="/terms/">이용약관</a>
+      <div>입력한 내용은 이 기기 브라우저에만 저장돼요.</div>
+    </footer>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    /* =========================================================
+       2. 기본 레시피 (배추 10포기 기준). cost: 그 양을 살 때 예상 비용(원)
+       ========================================================= */
+    const BASE_HEADS = 10;
+    const DEFAULT_RECIPE = [
+      { id: 'cabbage', name: '배추', amount: 10, unit: '포기', cost: 35000 },
+      { id: 'salt', name: '굵은소금', amount: 3000, unit: 'g', cost: 9000 },
+      { id: 'chili', name: '고춧가루', amount: 1200, unit: 'g', cost: 54000, spicy: true },
+      { id: 'rice', name: '찹쌀가루 (풀)', amount: 300, unit: 'g', cost: 3000 },
+      { id: 'anchovy', name: '멸치액젓', amount: 700, unit: 'ml', cost: 5000 },
+      { id: 'shrimp', name: '새우젓', amount: 300, unit: 'g', cost: 7000 },
+      { id: 'radish', name: '무', amount: 3, unit: '개', cost: 6000 },
+      { id: 'scallion', name: '쪽파', amount: 1, unit: '단', cost: 8000 },
+      { id: 'mustard', name: '갓', amount: 1, unit: '단', cost: 5000 },
+      { id: 'garlic', name: '다진 마늘', amount: 600, unit: 'g', cost: 9000 },
+      { id: 'ginger', name: '생강', amount: 100, unit: 'g', cost: 2000 },
+      { id: 'onion', name: '양파', amount: 2, unit: '개', cost: 1500 },
+      { id: 'sugar', name: '설탕', amount: 100, unit: 'g', cost: 300 },
+    ];
+    const SPICY = { mild: { label: '순한맛', k: 0.7 }, normal: { label: '보통', k: 1 }, hot: { label: '매운맛', k: 1.3 } };
+    const HEADS_PER_TUB = 2.5; // 10L 김치통 하나에 들어가는 대략적인 포기 수
+    const SITE = 'https://today-ai-works.pages.dev/tools/kimjang-split/';
+    const STORE_KEY = 'taw:kimjang-split:state';
+
+    function defaultState() {
+      return {
+        v: 1,
+        heads: 20,
+        spicy: 'normal',
+        recipe: DEFAULT_RECIPE.map((r) => ({ ...r })),
+        families: [
+          { id: 'f1', name: '큰집', heads: 8, paid: 0 },
+          { id: 'f2', name: '작은집', heads: 6, paid: 0 },
+          { id: 'f3', name: '막내네', heads: 6, paid: 0 },
+        ],
+        owners: {},   // 재료 id → 담당 가족 id
+        checked: {},  // 재료 id → 샀음
+        saltStart: '',
+        saltHours: 10,
+      };
+    }
+
+    /* =========================================================
+       3. 저장 · 불러오기 (브라우저 localStorage, 공유 링크는 주소 # 뒤에)
+       ========================================================= */
+    function save() {
+      try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch { /* 저장이 막혀도 계산은 된다 */ }
+    }
+
+    function clean(s) {
+      // 저장값이 깨졌거나 예전 형식이어도 화면이 망가지지 않게 기본값으로 채운다
+      const d = defaultState();
+      if (!s || typeof s !== 'object') return d;
+      const num = (x, fb) => (Number.isFinite(Number(x)) ? Number(x) : fb);
+      return {
+        v: 1,
+        heads: Math.max(1, Math.min(999, Math.round(num(s.heads, d.heads)))),
+        spicy: SPICY[s.spicy] ? s.spicy : 'normal',
+        recipe: Array.isArray(s.recipe) && s.recipe.length
+          ? s.recipe.slice(0, 40).map((r, i) => ({ id: String(r.id || `r${i}`), name: String(r.name || '재료').slice(0, 30), amount: Math.max(0, num(r.amount, 0)), unit: String(r.unit || '').slice(0, 6), cost: Math.max(0, Math.round(num(r.cost, 0))), spicy: !!r.spicy }))
+          : d.recipe,
+        families: Array.isArray(s.families)
+          ? s.families.slice(0, 20).map((f, i) => ({ id: String(f.id || `f${i}`), name: String(f.name || `가족${i + 1}`).slice(0, 20), heads: Math.max(0, num(f.heads, 0)), paid: Math.max(0, Math.round(num(f.paid, 0))) }))
+          : d.families,
+        owners: s.owners && typeof s.owners === 'object' ? s.owners : {},
+        checked: s.checked && typeof s.checked === 'object' ? s.checked : {},
+        saltStart: /^\d{2}:\d{2}$/.test(s.saltStart || '') ? s.saltStart : '',
+        saltHours: [8, 10, 12].includes(Number(s.saltHours)) ? Number(s.saltHours) : 10,
+      };
+    }
+
+    const b64enc = (str) => btoa(String.fromCharCode(...new TextEncoder().encode(str))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    const b64dec = (s) => new TextDecoder().decode(Uint8Array.from(atob(s.replace(/-/g, '+').replace(/_/g, '/')), (c) => c.charCodeAt(0)));
+
+    function load() {
+      const m = location.hash.match(/^#s=([\w-]+)$/);
+      if (m) {
+        try {
+          const shared = clean(JSON.parse(b64dec(m[1])));
+          history.replaceState(null, '', location.pathname);
+          if (!localStorage.getItem(STORE_KEY) || confirm('공유받은 김장 정산을 불러올까요?\n(이 기기에 저장된 내용은 바뀝니다)')) return shared;
+        } catch { /* 잘못된 링크면 무시 */ }
+      }
+      try { return clean(JSON.parse(localStorage.getItem(STORE_KEY))); } catch { return defaultState(); }
+    }
+
+    let state = load();
+
+    /* =========================================================
+       4. 계산
+       ========================================================= */
+    const won = (n) => `${Math.round(n).toLocaleString('ko-KR')}원`;
+
+    // 포기 수 · 맵기에 맞춘 재료량
+    function scaled(r) {
+      const k = (state.heads / BASE_HEADS) * (r.spicy ? SPICY[state.spicy].k : 1);
+      return { amount: r.amount * k, cost: r.cost * k };
+    }
+
+    // 보기 좋은 양: 1000g → 1kg, 개 · 단은 올림 (반 개는 못 사니까)
+    function fmtAmount(x, unit) {
+      if (unit === 'g' || unit === 'ml') {
+        const big = unit === 'g' ? 'kg' : 'L';
+        if (x >= 1000) return `${(Math.round(x / 100) / 10).toLocaleString('ko-KR')}${big}`;
+        return `${Math.round(x / 10) * 10}${unit}`;
+      }
+      if (unit === '개' || unit === '단') return `${Math.ceil(x - 1e-9)}${unit}`;
+      return `${Math.round(x * 10) / 10}${unit}`;
+    }
+
+    // 정산: 각 가족 몫과 차액(+는 받을 돈, -는 보낼 돈), 송금 목록
+    function settle() {
+      const fams = state.families;
+      const P = fams.reduce((a, f) => a + f.heads, 0);
+      const total = fams.reduce((a, f) => a + f.paid, 0);
+      const rows = fams.map((f) => {
+        const share = P > 0 ? Math.round((total * f.heads) / P) : 0;
+        return { f, share, diff: f.paid - share };
+      });
+      // 반올림 때문에 생긴 몇 원 차이는 가장 많이 가져가는 집 몫에 맞춘다 (합계가 0이 되게)
+      const rest = rows.reduce((a, r) => a + r.diff, 0);
+      if (rest && rows.length) {
+        const top = rows.reduce((a, r) => (r.f.heads > a.f.heads ? r : a), rows[0]);
+        top.share += rest;
+        top.diff -= rest;
+      }
+      // 그리디: 가장 많이 받을 집과 가장 많이 보낼 집을 짝지어 하나씩 지운다
+      const cred = rows.filter((r) => r.diff > 0).map((r) => ({ name: r.f.name, v: r.diff }));
+      const debt = rows.filter((r) => r.diff < 0).map((r) => ({ name: r.f.name, v: -r.diff }));
+      const transfers = [];
+      while (cred.length && debt.length) {
+        cred.sort((a, b) => b.v - a.v);
+        debt.sort((a, b) => b.v - a.v);
+        const c = cred[0];
+        const d = debt[0];
+        const amt = Math.min(c.v, d.v);
+        if (amt > 0) transfers.push({ from: d.name, to: c.name, amt });
+        c.v -= amt;
+        d.v -= amt;
+        if (c.v <= 0) cred.shift();
+        if (d.v <= 0) debt.shift();
+      }
+      return { P, total, rows, transfers };
+    }
+
+    /* =========================================================
+       5. 화면 그리기
+          구조(재료 줄 · 가족 카드)는 바뀔 때만 다시 만들고,
+          숫자 결과는 입력할 때마다 바꾼다 (입력 칸 커서가 튀지 않게)
+       ========================================================= */
+    const $ = (id) => document.getElementById(id);
+    const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+    function ownerOptions(sel) {
+      return `<option value="">담당 미정</option>` + state.families.map((f) => `<option value="${esc(f.id)}"${f.id === sel ? ' selected' : ''}>${esc(f.name)}</option>`).join('');
+    }
+
+    function buildItems() {
+      $('items').innerHTML = state.recipe.map((r) => `
+        <div class="item${state.checked[r.id] ? ' done' : ''}" data-id="${esc(r.id)}">
+          <input type="checkbox" data-k="check" aria-label="${esc(r.name)} 샀음"${state.checked[r.id] ? ' checked' : ''}>
+          <span class="name">${esc(r.name)}${r.spicy ? ' 🌶️' : ''}</span>
+          <span class="amt" data-out="amt"></span>
+          <span class="cost" data-out="cost"></span>
+          <select data-k="owner" aria-label="${esc(r.name)} 담당">${ownerOptions(state.owners[r.id])}</select>
+          <div class="edit">10포기 기준 <input type="number" min="0" step="any" inputmode="decimal" data-k="amount" value="${r.amount}" aria-label="${esc(r.name)} 기준 양">${esc(r.unit)} · <input type="number" min="0" step="100" inputmode="numeric" data-k="cost" value="${r.cost}" aria-label="${esc(r.name)} 기준 값">원</div>
+        </div>`).join('');
+    }
+
+    function buildFamilies() {
+      $('families').innerHTML = state.families.map((f) => `
+        <div class="family" data-id="${esc(f.id)}">
+          <div class="name-row"><input type="text" data-k="name" value="${esc(f.name)}" maxlength="20" aria-label="가족 이름"><button type="button" class="del" data-k="del" aria-label="${esc(f.name)} 빼기">빼기</button></div>
+          <label class="field">가져갈 포기<input type="number" min="0" step="0.5" inputmode="decimal" data-k="heads" value="${f.heads}"></label>
+          <label class="field">장 본 금액(원)<input type="number" min="0" step="1000" inputmode="numeric" data-k="paid" value="${f.paid || ''}" placeholder="0"></label>
+          <div class="tub" data-out="tub"></div>
+        </div>`).join('');
+    }
+
+    function renderNumbers() {
+      $('heads').value = state.heads;
+      document.querySelectorAll('#spicy button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.v === state.spicy)));
+
+      // 재료량
+      let est = 0;
+      for (const el of document.querySelectorAll('#items .item')) {
+        const r = state.recipe.find((x) => x.id === el.dataset.id);
+        if (!r) continue;
+        const s = scaled(r);
+        est += s.cost;
+        el.querySelector('[data-out="amt"]').textContent = fmtAmount(s.amount, r.unit);
+        el.querySelector('[data-out="cost"]').textContent = `약 ${won(Math.round(s.cost / 100) * 100)}`;
+      }
+      $('est-total').textContent = `약 ${won(Math.round(est / 1000) * 1000)}`;
+
+      // 가족별 김치통
+      for (const el of document.querySelectorAll('#families .family')) {
+        const f = state.families.find((x) => x.id === el.dataset.id);
+        if (f) el.querySelector('[data-out="tub"]').textContent = f.heads > 0 ? `🫙 10L 김치통 약 ${Math.ceil(f.heads / HEADS_PER_TUB)}개 챙기기` : '';
+      }
+
+      // 포기 수 합계 경고
+      const res = settle();
+      const warn = $('heads-warn');
+      if (Math.abs(res.P - state.heads) > 1e-9) {
+        warn.hidden = false;
+        warn.textContent = `⚠️ 가족들이 가져갈 포기 합계(${res.P}포기)가 담글 포기 수(${state.heads}포기)와 달라요. 정산은 가족 합계(${res.P}포기) 기준으로 나눠요.`;
+      } else warn.hidden = true;
+
+      // 정산
+      $('paid-total').innerHTML = `${won(res.total)} <small>총 장본 금액</small>`;
+      $('share-rows').innerHTML = res.rows.map((r) => `<tr><td>${esc(r.f.name)}</td><td>${r.f.heads}</td><td>${won(r.share)}</td><td>${won(r.f.paid)}</td><td class="${r.diff > 0 ? 'plus' : r.diff < 0 ? 'minus' : ''}">${r.diff > 0 ? '+' : ''}${r.diff ? r.diff.toLocaleString('ko-KR') : '0'}</td></tr>`).join('');
+      $('transfers').innerHTML = res.total <= 0
+        ? '<div class="empty">가족별로 장 본 금액을 넣으면 누가 누구에게 보낼지 나와요.</div>'
+        : res.transfers.length
+          ? res.transfers.map((t) => `<div class="transfer"><span>${esc(t.from)}</span><span class="arrow">→</span><span>${esc(t.to)}</span><span class="money">${won(t.amt)}</span></div>`).join('')
+          : '<div class="empty">🎉 딱 맞게 냈어요. 보낼 돈이 없어요.</div>';
+
+      // 절임 시각
+      $('salt-start').value = state.saltStart;
+      $('salt-hours').value = String(state.saltHours);
+      if (state.saltStart) {
+        const [h, m] = state.saltStart.split(':').map(Number);
+        const at = (add) => {
+          const mins = h * 60 + m + add * 60;
+          const day = Math.floor(mins / 1440);
+          const t = ((mins % 1440) + 1440) % 1440;
+          return `${day ? '다음 날 ' : ''}${String(Math.floor(t / 60)).padStart(2, '0')}:${String(t % 60).padStart(2, '0')}`;
+        };
+        $('salt-times').innerHTML = `<div><span>위아래 뒤집기</span><b>${at(state.saltHours / 2)}</b></div><div><span>헹구기</span><b>${at(state.saltHours)}</b></div>`;
+      } else $('salt-times').innerHTML = '<div style="grid-column:1/-1"><span>시작 시각을 넣으면 뒤집을 시각 · 헹굴 시각이 나와요</span></div>';
+
+      save();
+    }
+
+    function renderAll() {
+      buildItems();
+      buildFamilies();
+      renderNumbers();
+    }
+
+    /* =========================================================
+       6. 입력 연결
+       ========================================================= */
+    const setHeads = (n) => { state.heads = Math.max(1, Math.min(999, Math.round(n) || 1)); renderNumbers(); };
+    $('heads').addEventListener('input', (e) => { const n = Number(e.target.value); if (n >= 1) { state.heads = Math.min(999, Math.round(n)); renderNumbers(); } });
+    $('heads').addEventListener('change', (e) => setHeads(Number(e.target.value)));
+    $('heads-minus').addEventListener('click', () => setHeads(state.heads - 1));
+    $('heads-plus').addEventListener('click', () => setHeads(state.heads + 1));
+    $('spicy').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) { state.spicy = b.dataset.v; renderNumbers(); } });
+
+    $('items').addEventListener('input', (e) => {
+      const row = e.target.closest('.item');
+      const r = row && state.recipe.find((x) => x.id === row.dataset.id);
+      if (!r) return;
+      const k = e.target.dataset.k;
+      if (k === 'amount') r.amount = Math.max(0, Number(e.target.value) || 0);
+      if (k === 'cost') r.cost = Math.max(0, Math.round(Number(e.target.value) || 0));
+      renderNumbers();
+    });
+    $('items').addEventListener('change', (e) => {
+      const row = e.target.closest('.item');
+      if (!row) return;
+      const id = row.dataset.id;
+      if (e.target.dataset.k === 'check') {
+        if (e.target.checked) state.checked[id] = true; else delete state.checked[id];
+        row.classList.toggle('done', e.target.checked);
+        save();
+      }
+      if (e.target.dataset.k === 'owner') {
+        if (e.target.value) state.owners[id] = e.target.value; else delete state.owners[id];
+        save();
+      }
+    });
+    $('edit-btn').addEventListener('click', () => {
+      const on = $('recipe-card').classList.toggle('editing');
+      $('edit-btn').textContent = on ? '고치기 끝' : '우리 집 레시피로 고치기 (10포기 기준 양 · 값)';
+    });
+
+    $('families').addEventListener('input', (e) => {
+      const card = e.target.closest('.family');
+      const f = card && state.families.find((x) => x.id === card.dataset.id);
+      if (!f) return;
+      const k = e.target.dataset.k;
+      if (k === 'name') { f.name = e.target.value.slice(0, 20) || '이름 없음'; refreshOwnerNames(); }
+      if (k === 'heads') f.heads = Math.max(0, Number(e.target.value) || 0);
+      if (k === 'paid') f.paid = Math.max(0, Math.round(Number(e.target.value) || 0));
+      renderNumbers();
+    });
+    $('families').addEventListener('click', (e) => {
+      if (e.target.dataset.k !== 'del') return;
+      const id = e.target.closest('.family').dataset.id;
+      const f = state.families.find((x) => x.id === id);
+      if (state.families.length <= 1) { toast('가족은 한 집 이상 있어야 해요'); return; }
+      if (f.paid && !confirm(`${f.name}을(를) 뺄까요? 장 본 금액 ${won(f.paid)}도 함께 빠져요.`)) return;
+      state.families = state.families.filter((x) => x.id !== id);
+      for (const k in state.owners) if (state.owners[k] === id) delete state.owners[k];
+      renderAll();
+    });
+    $('add-family').addEventListener('click', () => {
+      const n = state.families.length + 1;
+      const id = `f${Date.now().toString(36)}`;
+      state.families.push({ id, name: `${n}번째 집`, heads: 0, paid: 0 });
+      renderAll();
+      const input = document.querySelector(`.family[data-id="${id}"] input[data-k="name"]`);
+      if (input) { input.focus(); input.select(); }
+    });
+
+    // 가족 이름을 바꾸면 담당 드롭다운 글자도 같이 바꾼다 (재료 줄 전체를 다시 만들지 않고)
+    function refreshOwnerNames() {
+      for (const sel of document.querySelectorAll('#items select')) {
+        for (const opt of sel.options) {
+          const f = state.families.find((x) => x.id === opt.value);
+          if (f) opt.textContent = f.name;
+        }
+      }
+    }
+
+    $('salt-start').addEventListener('input', (e) => { state.saltStart = e.target.value; renderNumbers(); });
+    $('salt-hours').addEventListener('change', (e) => { state.saltHours = Number(e.target.value); renderNumbers(); });
+
+    $('reset-btn').addEventListener('click', () => {
+      if (!confirm('입력한 내용을 모두 지우고 처음 예시로 돌아갈까요?')) return;
+      state = defaultState();
+      $('recipe-card').classList.remove('editing');
+      renderAll();
+      toast('처음 예시로 돌아갔어요');
+    });
+
+    /* =========================================================
+       7. 복사 · 공유
+       ========================================================= */
+    function summaryText() {
+      const res = settle();
+      const lines = [`🥬 김장 품앗이 정산 (배추 ${state.heads}포기 · ${SPICY[state.spicy].label})`, `총 장본 금액 ${won(res.total)}`, '', '[가족별]'];
+      for (const r of res.rows) {
+        const d = r.diff > 0 ? `${won(r.diff)} 받기` : r.diff < 0 ? `${won(-r.diff)} 보내기` : '정산 끝';
+        lines.push(`${r.f.name} ${r.f.heads}포기 · 몫 ${won(r.share)} · 낸 돈 ${won(r.f.paid)} → ${d}`);
+      }
+      lines.push('', '[송금]');
+      if (res.transfers.length) for (const t of res.transfers) lines.push(`${t.from} → ${t.to} ${won(t.amt)}`);
+      else lines.push(res.total > 0 ? '보낼 돈 없음' : '장 본 금액을 아직 안 넣었어요');
+      const shop = shoppingLines();
+      if (shop.length) lines.push('', '[장보기 담당]', ...shop);
+      lines.push('', `정산기: ${SITE}`);
+      return lines.join('\n');
+    }
+
+    function shoppingLines() {
+      // 가족 순서대로, 담당 미정은 맨 끝에
+      const byOwner = new Map(state.families.map((f) => [f.name, []]));
+      byOwner.set('담당 미정', []);
+      for (const r of state.recipe) {
+        const owner = state.families.find((f) => f.id === state.owners[r.id]);
+        const key = owner ? owner.name : '담당 미정';
+        const s = scaled(r);
+        if (!byOwner.has(key)) byOwner.set(key, []); // 이름이 같은 가족이 둘이면 한 줄로 합쳐짐
+        byOwner.get(key).push(`${state.checked[r.id] ? '✅' : '⬜'} ${r.name} ${fmtAmount(s.amount, r.unit)}`);
+      }
+      const out = [];
+      for (const [k, v] of byOwner) if (v.length) out.push(`${k}: ${v.join(', ')}`);
+      return out;
+    }
+
+    async function copy(text, msg) {
+      try {
+        await navigator.clipboard.writeText(text);
+      } catch {
+        // 클립보드 API가 막힌 환경(오래된 브라우저 · 일부 앱 안 브라우저)
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        let ok = false;
+        try { ok = document.execCommand('copy'); } catch { ok = false; }
+        ta.remove();
+        if (!ok) { prompt('아래 내용을 길게 눌러 복사하세요', text); return; }
+      }
+      toast(msg);
+    }
+
+    $('copy-btn').addEventListener('click', () => copy(summaryText(), '요약을 복사했어요. 단톡방에 붙여 넣으세요'));
+    $('copy-shop-btn').addEventListener('click', () => copy([`🛒 김장 장보기 (배추 ${state.heads}포기 · ${SPICY[state.spicy].label})`, ...shoppingLines()].join('\n'), '장보기 목록을 복사했어요'));
+    $('share-btn').addEventListener('click', async () => {
+      const { checked, ...rest } = state; // 체크 표시는 사람마다 달라서 빼고 공유
+      const url = `${SITE}#s=${b64enc(JSON.stringify(rest))}`;
+      if (navigator.share) {
+        try { await navigator.share({ title: '김장 품앗이 정산', url }); return; } catch (e) { if (e && e.name === 'AbortError') return; }
+      }
+      copy(url, '공유 링크를 복사했어요. 열면 같은 정산이 보여요');
+    });
+
+    let toastTimer = 0;
+    function toast(msg) {
+      const t = $('toast');
+      t.textContent = msg;
+      t.classList.add('on');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => t.classList.remove('on'), 2200);
+    }
+
+    renderAll();
+  </script>
+</body>
+</html>

@@ -15,6 +15,7 @@ privacy/ terms/         개인정보처리방침, 이용약관
 assets/site.css         모든 페이지 공통 스타일
 assets/game.css         게임 페이지 공통 배치 (세로 9:16 화면)
 assets/game-kit.js      게임 공통 도우미 (기기 구분, 캔버스 선명도, 최고 기록, 사이트 주소)
+tools/                  생활 도구 (홈의 "도구" 칸, 도전 번호 없음)
 games/_template/        견본 게임 "10초 연타" (복사해서 새 게임 시작, 검색에서 제외)
 robots.txt sitemap.xml  검색 엔진용
 404.html                없는 주소
