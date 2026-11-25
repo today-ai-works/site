@@ -1,0 +1,1028 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>2026 나의 연말 영수증 — 올해의 나를 영수증으로 출력하기 | 오늘의 AI 작품</title>
+  <meta name="description" content="올해 만든 것, 배운 것, 다녀온 곳을 감열지 영수증처럼 한 줄씩 출력해 보세요. 내 영수증을 만들어 링크로 공유하고, 이미지로 저장하거나 인쇄할 수 있어요. 설치 · 가입 없음.">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="2026 나의 연말 영수증">
+  <meta property="og:description" content="올해의 나를 영수증으로 출력하기. 총 성장 합계는 얼마?">
+  <meta property="og:url" content="https://today-ai-works.pages.dev/tools/year-receipt/">
+  <link rel="canonical" href="https://today-ai-works.pages.dev/tools/year-receipt/">
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nanum+Gothic+Coding:wght@400;700&display=swap">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+  <style>
+    /* =========================================================
+       1. 색과 배치: 따뜻한 어두운 회색 배경 + 가운데 감열지 영수증
+       ========================================================= */
+    :root {
+      --bg: #3a3633;
+      --bg-soft: #4a4541;
+      --paper: #fdfcf7;
+      --ink: #2a2826;
+      --ink-soft: #6d6964;
+      --red: #c8362b;
+      --cream: #f3ede2;
+      --mono: 'Nanum Gothic Coding', 'D2Coding', monospace;
+      --sans: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, 'Malgun Gothic', sans-serif;
+      --fs: 16px; /* 영수증 글자 크기: 한 줄에 40칸이 꼭 맞게 JS가 정한다 */
+      color-scheme: dark;
+    }
+
+    * { box-sizing: border-box; }
+
+    html { -webkit-text-size-adjust: 100%; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: radial-gradient(ellipse at 50% 0%, #4d4743 0%, var(--bg) 60%) fixed, var(--bg);
+      color: var(--cream);
+      font-family: var(--sans);
+      line-height: 1.5;
+      word-break: keep-all;
+    }
+
+    .top {
+      position: sticky;
+      top: 0;
+      z-index: 6;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: calc(8px + env(safe-area-inset-top)) 12px 8px;
+      background: linear-gradient(var(--bg) 70%, rgba(58, 54, 51, 0));
+    }
+
+    .top a, .pill {
+      font: inherit;
+      font-size: 0.85rem;
+      color: var(--cream);
+      text-decoration: none;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 999px;
+      padding: 5px 11px;
+      cursor: pointer;
+    }
+
+    .pill[aria-pressed="true"] { background: var(--cream); color: var(--ink); }
+    .toggles { display: flex; gap: 6px; }
+
+    .intro { text-align: center; padding: 6px 16px 14px; }
+    .intro h1 { margin: 0; font-size: 1.35rem; font-weight: 900; }
+    .intro p { margin: 4px 0 0; font-size: 0.88rem; color: rgba(243, 237, 226, 0.7); }
+
+    .shared-banner { max-width: 360px; margin: 0 auto 12px; padding: 8px 12px; border-radius: 12px; background: rgba(255, 255, 255, 0.08); font-size: 0.88rem; text-align: center; }
+    .shared-banner[hidden] { display: none; }
+    .shared-banner button { font: inherit; font-weight: 800; color: #ffd98a; background: none; border: 0; text-decoration: underline; cursor: pointer; }
+
+    /* =========================================================
+       2. 영수증 종이: 지그재그 위아래(clip-path), 옅은 그림자 · 질감
+       ========================================================= */
+    .paper-wrap {
+      position: relative;
+      width: min(360px, calc(100vw - 32px));
+      margin: 0 auto;
+      filter: drop-shadow(0 10px 18px rgba(0, 0, 0, 0.35)); /* clip-path로 잘린 모양을 따라 그림자 */
+    }
+
+    .paper {
+      position: relative;
+      background:
+        repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.012) 0 1px, transparent 1px 3px),
+        linear-gradient(90deg, rgba(0, 0, 0, 0.025), transparent 12%, transparent 88%, rgba(0, 0, 0, 0.025)),
+        var(--paper);
+      color: var(--ink);
+      font-family: var(--mono);
+      font-size: var(--fs);
+      line-height: 1.5;
+      padding: 30px 18px 22px;
+    }
+
+    .ln { white-space: pre; min-height: 1.5em; clip-path: inset(0 100% 0 0); }
+    .ln.on { clip-path: none; }
+    .ln.big { font-weight: 700; font-size: 1em; }
+    .ln.bold { font-weight: 700; }
+    .ln.cat { font-weight: 700; }
+    .ln.total { font-weight: 700; }
+    .ln.soft { color: var(--ink-soft); }
+
+    .stamp {
+      position: absolute;
+      top: 150px; /* JS가 첫 분류 줄 오른쪽 빈자리로 옮긴다 */
+      right: 14px;
+      transform: translateY(-38%) rotate(-12deg);
+      border: 2.5px solid var(--red);
+      color: var(--red);
+      border-radius: 8px;
+      padding: 3px 8px;
+      font-family: var(--sans);
+      font-weight: 900;
+      font-size: 0.85rem;
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+      mix-blend-mode: multiply;
+    }
+
+    .stamp.big { font-size: 1.2rem; border-width: 3px; }
+    .stamp.on { opacity: 0.85; }
+
+    .barcode {
+      display: block;
+      margin: 6px auto 0;
+      height: 54px;
+      width: 86%;
+      cursor: pointer;
+      clip-path: inset(0 100% 0 0);
+      background: none;
+      border: 0;
+      padding: 0;
+    }
+
+    .barcode.on { clip-path: none; }
+    .barcode svg { width: 100%; height: 100%; display: block; }
+
+    /* 절취선 아래: 뜯어 가는 부분 */
+    .stub {
+      position: relative;
+      margin-top: -1px;
+      background: var(--paper);
+      color: var(--ink);
+      font-family: var(--mono);
+      font-size: var(--fs);
+      padding: 14px 18px 26px;
+      text-align: center;
+      transform-origin: 30% 0;
+    }
+
+    .stub::before { /* 점선 절취선 */
+      content: '';
+      position: absolute;
+      left: 8px;
+      right: 8px;
+      top: 0;
+      border-top: 2px dashed #b9b3aa;
+    }
+
+    .stub .scissors { position: absolute; left: 2px; top: -0.75em; font-size: 0.95em; color: #8f897f; }
+    .stub .small { font-size: 0.85em; color: var(--ink-soft); }
+
+    .tear-btn {
+      margin-top: 10px;
+      font-family: var(--sans);
+      font-weight: 900;
+      font-size: 1rem;
+      padding: 11px 20px;
+      border-radius: 999px;
+      border: 2px solid var(--ink);
+      background: #fff;
+      color: var(--ink);
+      cursor: pointer;
+    }
+
+    .tear-btn:active { transform: scale(0.97); }
+
+    /* 뜯은 뒤 나오는 연락처 카드 */
+    .contact {
+      width: min(340px, calc(100vw - 40px));
+      margin: 18px auto 0;
+      background: var(--cream);
+      color: var(--ink);
+      border-radius: 16px;
+      padding: 18px 16px;
+      text-align: center;
+      box-shadow: 0 10px 26px rgba(0, 0, 0, 0.3);
+      opacity: 0;
+      transform: translateY(16px) scale(0.96);
+      pointer-events: none;
+    }
+
+    .contact.on { pointer-events: auto; }
+    .contact .who { font-size: 1.25rem; font-weight: 900; }
+    .contact .what { color: var(--ink-soft); font-size: 0.92rem; margin-top: 2px; }
+    .contact .row { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 12px; }
+
+    .btn {
+      font: inherit;
+      font-weight: 800;
+      font-size: 0.92rem;
+      padding: 10px 14px;
+      border-radius: 12px;
+      border: 1px solid rgba(0, 0, 0, 0.12);
+      background: #fff;
+      color: var(--ink);
+      cursor: pointer;
+      text-decoration: none;
+    }
+
+    .btn.dark { background: var(--ink); color: #fff; border-color: var(--ink); }
+    .btn:active { transform: scale(0.97); }
+
+    .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: min(360px, calc(100vw - 32px)); margin: 22px auto 0; }
+    .actions .btn { background: rgba(255, 255, 255, 0.08); color: var(--cream); border-color: rgba(255, 255, 255, 0.16); }
+    .actions .btn.wide { grid-column: 1 / -1; background: var(--cream); color: var(--ink); font-size: 1rem; }
+
+    /* =========================================================
+       3. 내 영수증 만들기 (입력 칸)
+       ========================================================= */
+    .editor { width: min(520px, calc(100vw - 24px)); margin: 18px auto 0; background: var(--cream); color: var(--ink); border-radius: 18px; padding: 16px 14px; }
+    .editor[hidden] { display: none; }
+    .editor h2 { margin: 0 0 4px; font-size: 1.1rem; font-weight: 900; }
+    .editor .hint { margin: 0 0 12px; color: var(--ink-soft); font-size: 0.85rem; }
+    .editor label { display: block; font-size: 0.82rem; font-weight: 800; color: var(--ink-soft); margin-top: 10px; }
+    .editor input, .editor textarea { width: 100%; margin-top: 4px; font: inherit; font-size: 0.95rem; color: var(--ink); background: #fff; border: 1px solid #ddd5c7; border-radius: 10px; padding: 8px 10px; }
+    .editor textarea { min-height: 112px; font-family: var(--mono); font-size: 0.9rem; line-height: 1.5; resize: vertical; }
+    .editor .two { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .editor .cat-name { font-weight: 800; }
+    .editor .row { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
+    .editor .row .btn { flex: 1; }
+
+    footer { text-align: center; color: rgba(243, 237, 226, 0.55); font-size: 0.8rem; padding: 26px 0 40px; }
+    footer a { color: inherit; margin: 0 5px; }
+
+    #snow { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 5; }
+
+    .toast { position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom)); transform: translate(-50%, 20px); background: var(--cream); color: var(--ink); padding: 10px 16px; border-radius: 999px; font-weight: 800; font-size: 0.9rem; opacity: 0; transition: 0.2s ease; pointer-events: none; z-index: 10; }
+    .toast.on { opacity: 1; transform: translate(-50%, 0); }
+
+    /* =========================================================
+       4. 인쇄: 영수증만, 실제 감열지 폭(58mm)으로
+       ========================================================= */
+    @media print {
+      @page { size: 58mm 297mm; margin: 0; }
+      body { background: #fff; }
+      body > *:not(main) { display: none !important; }
+      main > *:not(.paper-wrap) { display: none !important; }
+      .paper-wrap { width: 58mm; filter: none; margin: 0; }
+      .paper { --fs: 2.45mm; padding: 4mm 2mm; background: #fff; clip-path: none !important; }
+      .ln, .barcode { clip-path: none !important; }
+      .stamp { opacity: 0.85; }
+      .stub { display: none; }
+    }
+
+    /* 영상 녹화용 (?frame): 위 · 아래 글자 띠, 그 사이로 영수증이 지나간다 */
+    .frame-hook, .frame-cta { display: none; }
+    body.frame .top, body.frame .intro, body.frame .actions, body.frame footer, body.frame .shared-banner { display: none !important; }
+    body.frame .frame-hook, body.frame .frame-cta { display: block; position: fixed; left: 0; right: 0; z-index: 7; text-align: center; pointer-events: none; padding: 0 30px; }
+    body.frame .frame-hook { top: 0; height: 232px; padding-top: 125px; background: linear-gradient(var(--bg) calc(100% - 16px), rgba(58, 54, 51, 0)); }
+    body.frame .frame-cta { top: 680px; height: 280px; padding-top: 20px; background: linear-gradient(rgba(58, 54, 51, 0), var(--bg) 16px); }
+    .frame-hook .tag { display: inline-block; padding: 4px 14px; border-radius: 999px; background: var(--red); color: #fff; font-weight: 900; font-size: 0.95rem; }
+    .frame-hook .hook { margin-top: 6px; font-size: 1.5rem; font-weight: 900; line-height: 1.28; color: var(--cream); }
+    .frame-cta .cta { font-size: 1.05rem; font-weight: 900; color: var(--cream); }
+    .frame-cta .url { margin-top: 2px; font-size: 0.85rem; font-weight: 800; color: rgba(243, 237, 226, 0.65); }
+    body.frame main { padding-top: 244px; padding-bottom: 300px; }
+  </style>
+</head>
+<body>
+  <div class="top">
+    <a href="/">← 다른 작품</a>
+    <div class="toggles">
+      <button type="button" class="pill" id="snow-btn" aria-pressed="false">❄️ 첫눈</button>
+      <button type="button" class="pill" id="sound-btn" aria-pressed="false">🔇 소리</button>
+    </div>
+  </div>
+
+  <div class="frame-hook"><span class="tag">연말 결산</span><div class="hook">올해의 나를<br>영수증으로 뽑아 봤다 🧾</div></div>
+  <div class="frame-cta"><div class="cta">프로필 링크에서 내 영수증 만들기</div><div class="url">today-ai-works.pages.dev</div></div>
+
+  <canvas id="snow" aria-hidden="true"></canvas>
+
+  <main>
+    <div class="intro">
+      <h1>🧾 2026 나의 연말 영수증</h1>
+      <p>스크롤하면 한 줄씩 출력돼요 · 아래에서 내 영수증으로 바꿀 수 있어요</p>
+    </div>
+    <div class="shared-banner" id="shared-banner" hidden>친구가 보낸 영수증이에요 · <button type="button" id="mine-btn">나도 만들기</button></div>
+
+    <div class="paper-wrap" id="paper-wrap">
+      <div class="paper" id="paper">
+        <div id="lines"></div>
+        <button type="button" class="barcode" id="barcode" aria-label="연락처로 이동"></button>
+        <div class="ln soft" id="barcode-no"></div>
+        <div class="stamp" id="stamp"></div>
+      </div>
+      <div class="stub" id="stub">
+        <span class="scissors">✂</span>
+        <div class="bold">[ 고객 보관용 ]</div>
+        <div class="small">절취선을 따라 뜯어 가세요</div>
+        <button type="button" class="tear-btn" id="tear-btn">✂️ 뜯어가기</button>
+      </div>
+    </div>
+
+    <div class="contact" id="contact" aria-live="polite">
+      <div class="who" id="c-who"></div>
+      <div class="what" id="c-what"></div>
+      <div class="row" id="c-links"></div>
+    </div>
+
+    <div class="actions">
+      <button type="button" class="btn wide" id="edit-btn">✏️ 내 영수증 만들기</button>
+      <button type="button" class="btn" id="share-btn">🔗 링크로 공유</button>
+      <button type="button" class="btn" id="png-btn">🖼️ 이미지 저장</button>
+      <button type="button" class="btn" id="print-btn">🖨️ 인쇄하기</button>
+      <button type="button" class="btn" id="replay-btn">🔁 다시 출력</button>
+    </div>
+
+    <!-- 내 영수증 만들기 -->
+    <section class="editor" id="editor" hidden>
+      <h2>✏️ 내 영수증 만들기</h2>
+      <p class="hint">한 줄에 하나씩 <b>항목 x수량 / 값</b> 으로 적어요. 예: <code>개인 블로그 x1 / 글 24편</code> (수량 · 값은 빼도 돼요)</p>
+      <div class="two">
+        <label>이름 (가게 이름 자리)<input type="text" id="f-name" maxlength="16"></label>
+        <label>한 줄 소개<input type="text" id="f-title" maxlength="20"></label>
+      </div>
+      <div id="f-cats"></div>
+      <label>마지막 한마디<input type="text" id="f-thanks" maxlength="34"></label>
+      <div class="two">
+        <label>연락처 이름<input type="text" id="f-clabel" maxlength="16" placeholder="예: 블로그"></label>
+        <label>연락처 주소 (https:// 또는 메일)<input type="text" id="f-curl" maxlength="200" placeholder="https://"></label>
+      </div>
+      <div class="row">
+        <button type="button" class="btn dark" id="apply-btn">🧾 이걸로 출력하기</button>
+        <button type="button" class="btn" id="sample-btn">예시로 되돌리기</button>
+      </div>
+      <p class="hint" style="margin-top:10px">입력한 내용은 이 기기 브라우저에만 저장돼요. 링크로 공유하면 내용이 링크 안에 담겨요.</p>
+    </section>
+  </main>
+
+  <footer>
+    <a href="/">오늘의 AI 작품</a>·<a href="/privacy/">개인정보처리방침</a>·<a href="/terms/">이용약관</a>
+  </footer>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    /* =========================================================
+       5. 예시 데이터 (가상의 개발자 지망생). ★ 고칠 곳: 화면의 "내 영수증 만들기"
+       ========================================================= */
+    const YEAR = 2026;
+    const COLS = 40; // 한 줄 칸 수 (한글은 2칸, 영문 · 숫자는 1칸)
+    const SITE = 'https://today-ai-works.pages.dev/tools/year-receipt/';
+    const STORE_KEY = 'taw:year-receipt:mine';
+
+    const SAMPLE = {
+      name: '김새해',
+      title: '개발자 지망생',
+      cats: [
+        { name: '만든 것', items: [
+          { n: '개인 블로그', q: 1, v: '글 24편' },
+          { n: '날씨 알림 봇', q: 1, v: 'v1.0 출시' },
+          { n: '브라우저 미니게임', q: 3, v: '3종' },
+          { n: '포트폴리오 사이트', q: 1, v: '공개' },
+        ] },
+        { name: '배운 것', items: [
+          { n: '파이썬 기초', q: 1, v: '120시간' },
+          { n: 'Git 브랜치 · PR', q: 1, v: '커밋 342개' },
+          { n: 'SQL 조인', q: 1, v: '40시간' },
+          { n: '영어 단어', q: 1200, v: '하루 20개' },
+        ] },
+        { name: '다녀온 곳', items: [
+          { n: '제주도', q: 1, v: '3박 4일' },
+          { n: '개발자 밋업', q: 4, v: '명함 9장' },
+          { n: '동네 도서관', q: 52, v: '주 1회' },
+        ] },
+        { name: '소소한 성취', items: [
+          { n: '아침 운동', q: 87, v: '87일' },
+          { n: '책 읽기', q: 12, v: '12권' },
+          { n: '미루던 치과', q: 1, v: '완료' },
+        ] },
+      ],
+      thanks: '올해도 수고 많았어, 나!',
+      contact: { label: 'GitHub', url: 'https://github.com/' },
+    };
+
+    /* =========================================================
+       6. 저장 · 공유 링크 (주소 # 뒤에 담아서, 서버에 보내지 않음)
+       ========================================================= */
+    const params = new URLSearchParams(location.search);
+    const isFrame = params.has('frame');
+    const $ = (id) => document.getElementById(id);
+    const store = {
+      get(k) { try { return localStorage.getItem(k); } catch { return null; } },
+      set(k, v) { try { localStorage.setItem(k, v); } catch { /* 저장이 막혀도 보기는 된다 */ } },
+    };
+    const b64enc = (str) => btoa(String.fromCharCode(...new TextEncoder().encode(str))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    const b64dec = (s) => new TextDecoder().decode(Uint8Array.from(atob(s.replace(/-/g, '+').replace(/_/g, '/')), (c) => c.charCodeAt(0)));
+
+    // 연락처 주소는 https · http · 메일만 허용 (공유 링크로 이상한 주소가 들어와도 막는다)
+    function safeUrl(u) {
+      u = String(u || '').trim();
+      if (!u) return '';
+      if (/^[^\s@/]+@[^\s@/]+\.[^\s@/]+$/.test(u)) return `mailto:${u}`;
+      if (/^mailto:[^\s@/]+@[^\s@/]+\.[^\s@/]+$/i.test(u)) return u;
+      if (!/^https?:\/\//i.test(u)) u = `https://${u}`;
+      try { const x = new URL(u); return /^https?:$/.test(x.protocol) ? x.href : ''; } catch { return ''; }
+    }
+
+    // 저장값 · 링크값이 깨졌어도 화면이 망가지지 않게 정리
+    function clean(d) {
+      if (!d || typeof d !== 'object') return JSON.parse(JSON.stringify(SAMPLE));
+      const str = (s, n) => String(s == null ? '' : s).replace(/[\r\n\t]/g, ' ').slice(0, n);
+      const cats = Array.isArray(d.cats) ? d.cats.slice(0, 6).map((c) => ({
+        name: str(c && c.name, 12) || '항목',
+        items: Array.isArray(c && c.items) ? c.items.slice(0, 12).map((it) => ({ n: str(it && it.n, 30), q: Math.max(0, Math.min(99999, Math.round(Number(it && it.q) || 0))), v: str(it && it.v, 14) })).filter((it) => it.n) : [],
+      })) : [];
+      return {
+        name: str(d.name, 16) || '나',
+        title: str(d.title, 20),
+        cats,
+        thanks: str(d.thanks, 34),
+        contact: { label: str(d.contact && d.contact.label, 16), url: safeUrl(d.contact && d.contact.url) },
+      };
+    }
+
+    let shared = false;
+    function loadData() {
+      const m = location.hash.match(/^#r=([\w-]+)$/);
+      if (m) {
+        try { shared = true; return clean(JSON.parse(b64dec(m[1]))); } catch { shared = false; }
+      }
+      const mine = store.get(STORE_KEY);
+      if (mine) { try { return clean(JSON.parse(mine)); } catch { /* 예시로 */ } }
+      return clean(SAMPLE);
+    }
+
+    let data = isFrame ? clean(SAMPLE) : loadData();
+
+    /* =========================================================
+       7. 고정폭 줄 만들기: 글자마다 실제 폭을 재서 점선을 채운다
+       ========================================================= */
+    const measureCtx = document.createElement('canvas').getContext('2d');
+    const widthCache = new Map();
+    let unit = 8;
+    function charCols(ch) {
+      if (widthCache.has(ch)) return widthCache.get(ch);
+      const w = Math.max(1, Math.round(measureCtx.measureText(ch).width / unit));
+      widthCache.set(ch, w);
+      return w;
+    }
+    function initMeasure() {
+      measureCtx.font = "16px 'Nanum Gothic Coding', monospace";
+      unit = measureCtx.measureText('0').width;
+      widthCache.clear();
+    }
+    const cols = (s) => [...s].reduce((a, ch) => a + charCols(ch), 0);
+    function cut(s, max) { // max칸을 넘으면 …로 줄임
+      if (cols(s) <= max) return s;
+      let out = '';
+      for (const ch of s) { if (cols(out + ch) > max - 1) break; out += ch; }
+      return `${out}…`;
+    }
+    const center = (s) => { s = cut(s, COLS); const pad = Math.floor((COLS - cols(s)) / 2); return ' '.repeat(pad) + s; };
+    const rule = (ch) => ch.repeat(COLS);
+    // "왼쪽 ........ 오른쪽" (점선을 채워 오른쪽 끝을 맞춘다)
+    function lr(left, right, fill = '.') {
+      right = cut(right, 16);
+      const room = COLS - cols(right) - 2;
+      if (cols(left) > room) return [left.length ? cut(left, COLS) : '', ' '.repeat(Math.max(0, COLS - cols(right) - 1)) + ' ' + right].map((x, i) => (i === 1 ? fillLine(x, right, fill) : x));
+      const dots = fill.repeat(Math.max(1, room - cols(left)));
+      return [`${left} ${dots} ${right}`];
+    }
+    function fillLine(_, right, fill) { // 이름이 길면 둘째 줄: "  ........ 오른쪽"
+      const n = COLS - cols(right) - 3;
+      return `  ${fill.repeat(Math.max(1, n))} ${right}`;
+    }
+
+    function pad2(n) { return String(n).padStart(2, '0'); }
+    function hash(s) { let h = 2166136261; for (const ch of s) { h ^= ch.codePointAt(0); h = Math.imul(h, 16777619); } return h >>> 0; }
+
+    // 영수증 줄 목록: { t: 글자, c: 꾸밈 } 또는 { barcode: true }
+    function buildLines() {
+      const d = data;
+      const now = new Date();
+      const L = [];
+      const add = (t, c = '') => L.push({ t, c });
+      const no = String(hash(JSON.stringify(d)) % 10000).padStart(4, '0');
+      add(center(`${YEAR} 나의 연말 영수증`), 'big');
+      add(center(d.title ? `${d.name} (${d.title})` : d.name), 'bold');
+      add(center(`영업시간 ${YEAR}.01.01 ~ ${YEAR}.12.31`), 'soft');
+      add(lr(`No.${YEAR}-${no}`, `출력 ${now.getFullYear()}.${pad2(now.getMonth() + 1)}.${pad2(now.getDate())}`, ' ')[0], 'soft');
+      add(rule('='));
+      let total = 0;
+      d.cats.forEach((c, ci) => {
+        if (!c.items.length) return;
+        add(`[${c.name}]`, 'cat');
+        for (const it of c.items) {
+          const left = it.q ? `${it.n} x${it.q.toLocaleString('ko-KR')}` : it.n;
+          for (const t of lr(left, it.v || '완료')) add(t);
+        }
+        add(lr('  소계', `${c.items.length}건`, ' ')[0], 'bold');
+        total += c.items.length;
+        add(ci < d.cats.length - 1 ? rule('-') : '');
+      });
+      add(rule('='));
+      add(lr('총 성장 합계', `${total}건`, ' ')[0], 'total');
+      add(lr('부가세(뿌듯함)', '포함')[0]);
+      add(lr('받은 금액(노력)', '전액')[0]);
+      add(lr('거스름돈(후회)', '0')[0]);
+      add(rule('='));
+      add('');
+      if (d.thanks) add(center(d.thanks), 'bold');
+      add(center('*** 감사합니다 ***'));
+      add('');
+      L.push({ barcode: true });
+      return { lines: L, no };
+    }
+
+    /* =========================================================
+       8. 그리기: 줄 · 바코드 · 도장 · 지그재그
+       ========================================================= */
+    let built = null;
+    let lineEls = [];
+    let printQueue = 0;   // 다음에 출력할 줄 번호
+    let printT = 0;       // 지금 줄이 출력된 정도 (0~1)
+
+    function esc(s) { return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+
+    function barcodeSvg(seed) {
+      // 이름과 연락처로 만든 가짜 바코드 (세로줄 굵기만 바뀐다)
+      let x = 0;
+      let h = seed || 1;
+      const bars = [];
+      while (x < 200) {
+        h = Math.imul(h ^ (h >>> 13), 1274126177) >>> 0;
+        const w = 1 + (h % 3);
+        const gap = 1 + ((h >>> 8) % 3);
+        bars.push(`<rect x="${x}" y="0" width="${w}" height="60"/>`);
+        x += w + gap;
+      }
+      return `<svg viewBox="0 0 ${x} 60" preserveAspectRatio="none" aria-hidden="true"><g fill="#2a2826">${bars.join('')}</g></svg>`;
+    }
+
+    function render() {
+      initMeasure();
+      built = buildLines();
+      $('lines').innerHTML = built.lines.filter((l) => !l.barcode).map((l) => `<div class="ln ${l.c}">${esc(l.t)}</div>`).join('');
+      $('barcode').innerHTML = barcodeSvg(hash(data.name + data.contact.url));
+      $('barcode-no').textContent = center(`${YEAR}${built.no} ${String(hash(data.name) % 1000000).padStart(6, '0')}`);
+      lineEls = [...document.querySelectorAll('#lines .ln'), $('barcode'), $('barcode-no')];
+      printQueue = 0;
+      printT = 0;
+      lineEls.forEach((el) => { el.classList.remove('on'); el.style.clipPath = ''; });
+      renderStamp();
+      renderContact();
+      fitFont();
+    }
+
+    // 한 줄 40칸이 영수증 안쪽 폭에 꼭 맞게 글자 크기를 정한다
+    function fitFont() {
+      const paper = $('paper');
+      const inner = paper.clientWidth - 36;
+      const fs = Math.max(9, Math.min(17, (inner / COLS) * (16 / unit)));
+      document.documentElement.style.setProperty('--fs', `${fs.toFixed(2)}px`);
+      zigzag();
+      // 도장은 첫 분류 줄([만든 것]) 오른쪽 빈자리에
+      const cat = document.querySelector('#lines .ln.cat');
+      if (cat) $('stamp').style.top = `${cat.offsetTop}px`;
+    }
+
+    // clip-path로 위아래 지그재그
+    function zigzag() {
+      const paper = $('paper');
+      const w = paper.offsetWidth;
+      const h = paper.offsetHeight;
+      const step = 12;
+      const depth = 7;
+      const pts = [];
+      for (let x = 0; x <= w; x += step) pts.push(`${x}px ${(x / step) % 2 ? 0 : depth}px`);
+      pts.push(`${w}px ${depth}px`, `${w}px ${h}px`, `0px ${h}px`);
+      paper.style.clipPath = `polygon(${pts.join(', ')})`;
+      const stub = $('stub');
+      const sw = stub.offsetWidth;
+      const sh = stub.offsetHeight;
+      const sp = [`0px 0px`, `${sw}px 0px`];
+      for (let x = sw; x >= 0; x -= step) sp.push(`${x}px ${sh - ((x / step) % 2 ? 0 : depth)}px`);
+      sp.push(`0px ${sh - depth}px`);
+      stub.style.clipPath = `polygon(${sp.join(', ')})`;
+    }
+
+    // 날짜 도장: 12월 17일부터 "마감 임박", 해가 바뀌면 "영업 종료", 그 전에는 D-day
+    function renderStamp() {
+      const now = new Date();
+      const end = new Date(YEAR, 11, 31);
+      const days = Math.ceil((end - new Date(now.getFullYear(), now.getMonth(), now.getDate())) / 86400000);
+      const s = $('stamp');
+      s.classList.remove('big');
+      if (days < 0) { s.textContent = '영업 종료'; s.classList.add('big'); }
+      else if (days <= 14) { s.textContent = days === 0 ? '오늘 마감!' : '마감 임박'; s.classList.add('big'); }
+      else s.textContent = `영업 중 D-${days}`;
+    }
+
+    function renderContact() {
+      $('c-who').textContent = data.name;
+      $('c-what').textContent = data.title || `${YEAR}년도 수고했어요`;
+      const links = [];
+      if (data.contact.url) links.push(`<a class="btn dark" href="${esc(data.contact.url)}" target="_blank" rel="noopener noreferrer">${esc(data.contact.label || '연락처')} →</a>`);
+      links.push(`<button type="button" class="btn" data-act="mine">✏️ 나도 만들기</button>`);
+      $('c-links').innerHTML = links.join('');
+    }
+
+    /* =========================================================
+       9. 출력 애니메이션: 화면에 들어온 줄부터 위에서 한 줄씩
+          (영상에서도 똑같이 나오게 시간을 직접 세는 방식)
+       ========================================================= */
+    const LINE_SEC = 0.11;
+    function stepPrint(dt) {
+      let budget = dt;
+      while (budget > 0 && printQueue < lineEls.length) {
+        const el = lineEls[printQueue];
+        const r = el.getBoundingClientRect();
+        // 화면 아래에서 40px 안쪽까지 올라온 줄만 출력 (스크롤해야 다음 줄이 나온다)
+        if (r.top > window.innerHeight - (isFrame ? 300 : 40)) return;
+        if (printT === 0) sfx(el.textContent.trim() ? 'line' : 'feed');
+        const need = LINE_SEC * (el.textContent.trim() || el.id === 'barcode' ? 1 : 0.4);
+        const use = Math.min(budget, (1 - printT) * need);
+        printT += use / need;
+        budget -= use;
+        if (printT >= 0.999) {
+          el.classList.add('on');
+          el.style.clipPath = '';
+          printQueue += 1;
+          printT = 0;
+          if (el.classList.contains('cat')) $('stamp').classList.add('on'); // 첫 분류 줄이 찍히면 도장도 쾅
+        } else {
+          // 글자 칸 단위로 끊어서 타자 치듯 (steps)
+          const p = Math.floor(printT * 20) / 20;
+          el.style.clipPath = `inset(0 ${(100 - p * 100).toFixed(1)}% 0 0)`;
+        }
+      }
+    }
+
+    /* =========================================================
+       10. 뜯어가기: 절취선 아래가 찢어져 떨어지고 연락처 카드 등장
+       ========================================================= */
+    let tearT = -1; // -1이면 아직 안 뜯음
+    function tear() {
+      if (tearT >= 0) return;
+      tearT = 0;
+      sfx('tear');
+    }
+    function stepTear(dt) {
+      if (tearT < 0) return;
+      tearT += dt;
+      const stub = $('stub');
+      const t = tearT;
+      const fall = Math.max(0, t - 0.15);
+      stub.style.transform = `translate(${fall * 40}px, ${fall * fall * 900}px) rotate(${Math.min(28, fall * 70)}deg)`;
+      stub.style.opacity = String(Math.max(0, 1 - fall * 1.4));
+      const c = $('contact');
+      const p = Math.max(0, Math.min(1, (t - 0.45) / 0.35));
+      c.style.opacity = String(p);
+      c.style.transform = `translateY(${(1 - p) * 16}px) scale(${0.96 + p * 0.04})`;
+      if (p >= 1) c.classList.add('on');
+      if (fall > 1.2) stub.style.visibility = 'hidden';
+    }
+    function resetTear() {
+      tearT = -1;
+      const stub = $('stub');
+      stub.style.transform = '';
+      stub.style.opacity = '';
+      stub.style.visibility = '';
+      const c = $('contact');
+      c.style.opacity = '';
+      c.style.transform = '';
+      c.classList.remove('on');
+    }
+
+    /* =========================================================
+       11. 첫눈: 화면 위로 눈이 내리고, 영수증 윗부분에 조금씩 쌓인다
+       ========================================================= */
+    const snowCv = $('snow');
+    const sctx = snowCv.getContext('2d');
+    let snowOn = false;
+    let flakes = [];
+    let pile = []; // 영수증 윗변 4px 칸마다 쌓인 높이
+    let rnd = Math.random;
+    function mulberry32(a) { return () => { a |= 0; a = (a + 0x6d2b79f5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+    function sizeSnow() {
+      const dpr = Math.min(2, window.devicePixelRatio || 1);
+      snowCv.width = Math.round(innerWidth * dpr);
+      snowCv.height = Math.round(innerHeight * dpr);
+      sctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      pile = new Array(Math.ceil($('paper-wrap').offsetWidth / 4) + 1).fill(0);
+    }
+    function setSnow(on) {
+      snowOn = on;
+      $('snow-btn').setAttribute('aria-pressed', String(on));
+      if (on && !flakes.length) {
+        flakes = Array.from({ length: Math.round((innerWidth * innerHeight) / 6500) }, () => ({ x: rnd() * innerWidth, y: rnd() * innerHeight, r: 1 + rnd() * 2.4, vy: 22 + rnd() * 30, ph: rnd() * 6.28 }));
+      }
+      if (!on) sctx.clearRect(0, 0, innerWidth, innerHeight);
+    }
+    function stepSnow(dt) {
+      if (!snowOn) return;
+      const pr = $('paper').getBoundingClientRect();
+      sctx.clearRect(0, 0, innerWidth, innerHeight);
+      sctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+      for (const f of flakes) {
+        const py = f.y;
+        f.y += f.vy * dt;
+        f.ph += dt * 1.3;
+        f.x += Math.sin(f.ph) * 10 * dt;
+        // 영수증 윗변에 닿으면 그 자리에 쌓인다
+        if (f.x > pr.left && f.x < pr.right) {
+          const i = Math.floor((f.x - pr.left) / 4);
+          const top = pr.top + 4 - (pile[i] || 0);
+          if (py < top && f.y >= top) {
+            for (let k = -1; k <= 1; k++) if (pile[i + k] !== undefined) pile[i + k] = Math.min(14, pile[i + k] + (k ? 0.35 : 0.8));
+            f.y = -5;
+            f.x = rnd() * innerWidth;
+            continue;
+          }
+        }
+        if (f.y > innerHeight + 5) { f.y = -5; f.x = rnd() * innerWidth; }
+        sctx.beginPath();
+        sctx.arc(f.x, f.y, f.r, 0, Math.PI * 2);
+        sctx.fill();
+      }
+      // 쌓인 눈 (영수증 윗변 위로 둥글게)
+      if (pr.bottom > 0 && pr.top < innerHeight) {
+        sctx.fillStyle = '#ffffff';
+        sctx.beginPath();
+        sctx.moveTo(pr.left, pr.top + 6);
+        for (let i = 0; i < pile.length; i++) sctx.lineTo(pr.left + i * 4, pr.top + 5 - pile[i]);
+        sctx.lineTo(pr.right, pr.top + 6);
+        sctx.closePath();
+        sctx.fill();
+      }
+    }
+
+    /* =========================================================
+       12. 소리: 감열 프린터 "치익" (잡음을 걸러서 직접 합성, 기본은 꺼짐)
+       ========================================================= */
+    let AC = null;
+    let soundOn = false;
+    let audioLog = null; // 영상 모드: 소리 대신 시각을 기록
+    let clock = 0;
+    function noiseBuffer(ac) {
+      const len = Math.floor(ac.sampleRate * 0.4);
+      const b = ac.createBuffer(1, len, ac.sampleRate);
+      const d = b.getChannelData(0);
+      let s = 12345;
+      for (let i = 0; i < len; i++) { s = (s * 1103515245 + 12345) & 0x7fffffff; d[i] = (s / 0x7fffffff) * 2 - 1; }
+      return b;
+    }
+    function playSfx(ac, t, kind, dest) {
+      const buf = ac.__noise || (ac.__noise = noiseBuffer(ac));
+      const burst = (at, dur, freq, q, vol) => {
+        const src = ac.createBufferSource();
+        src.buffer = buf;
+        const bp = ac.createBiquadFilter();
+        bp.type = 'bandpass';
+        bp.frequency.value = freq;
+        bp.Q.value = q;
+        const g = ac.createGain();
+        g.gain.setValueAtTime(0.0001, t + at);
+        g.gain.exponentialRampToValueAtTime(vol, t + at + 0.005);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + at + dur);
+        src.connect(bp).connect(g).connect(dest);
+        src.start(t + at, (at * 7) % 0.3);
+        src.stop(t + at + dur + 0.02);
+      };
+      if (kind === 'line') { for (let i = 0; i < 4; i++) burst(i * 0.022, 0.03, 3800 + i * 250, 2.2, 0.5); }
+      else if (kind === 'feed') burst(0, 0.05, 2400, 1.5, 0.25);
+      else if (kind === 'tear') { for (let i = 0; i < 9; i++) burst(i * 0.035, 0.05, 1500 + (i % 3) * 700, 1.2, 0.7); }
+    }
+    function sfx(kind) {
+      if (isFrame) { if (audioLog) audioLog.push({ t: clock, kind }); return; }
+      if (!soundOn || !AC) return;
+      playSfx(AC, AC.currentTime, kind, AC.destination);
+    }
+    function ensureAudio() {
+      try {
+        if (!AC) AC = new (window.AudioContext || window.webkitAudioContext)();
+        if (AC.state === 'suspended') AC.resume();
+      } catch { AC = null; }
+    }
+
+    /* =========================================================
+       13. 이미지 저장: 같은 줄을 58mm 감열지 비율(384px 폭)로 다시 그린다
+       ========================================================= */
+    async function savePng() {
+      await document.fonts.load("16px 'Nanum Gothic Coding'");
+      const S = 2;
+      const W = 384;
+      const padX = 14;
+      const cell = (W - padX * 2) / COLS;
+      const fs = cell * (16 / unit);
+      const lh = fs * 1.5;
+      const lines = built.lines.filter((l) => !l.barcode);
+      const H = Math.ceil(26 + lines.length * lh + 90 + 26);
+      const cv = document.createElement('canvas');
+      cv.width = W * S;
+      cv.height = H * S;
+      const c = cv.getContext('2d');
+      c.scale(S, S);
+      // 종이 + 지그재그
+      c.fillStyle = '#3a3633';
+      c.fillRect(0, 0, W, H);
+      c.fillStyle = '#fdfcf7';
+      c.beginPath();
+      c.moveTo(0, 7);
+      for (let x = 0; x <= W; x += 12) c.lineTo(x, (x / 12) % 2 ? 0 : 7);
+      c.lineTo(W, H - 7);
+      for (let x = W; x >= 0; x -= 12) c.lineTo(x, H - ((x / 12) % 2 ? 0 : 7));
+      c.closePath();
+      c.fill();
+      c.textBaseline = 'middle';
+      lines.forEach((l, i) => {
+        c.font = `${/big|bold|cat|total/.test(l.c) ? 700 : 400} ${fs}px 'Nanum Gothic Coding', monospace`;
+        c.fillStyle = l.c === 'soft' ? '#6d6964' : '#2a2826';
+        c.fillText(l.t, padX, 26 + i * lh + lh / 2);
+      });
+      // 바코드
+      const y0 = 26 + lines.length * lh + 6;
+      const img = new Image();
+      img.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent($('barcode').innerHTML.replace('<svg ', '<svg xmlns="http://www.w3.org/2000/svg" '))}`;
+      await img.decode();
+      c.drawImage(img, W * 0.07, y0, W * 0.86, 50);
+      c.font = `400 ${fs}px 'Nanum Gothic Coding', monospace`;
+      c.fillStyle = '#6d6964';
+      c.fillText($('barcode-no').textContent, padX, y0 + 50 + lh / 2 + 2);
+      // 도장
+      c.save();
+      const catIdx = Math.max(0, lines.findIndex((l) => l.c === 'cat'));
+      c.translate(W - 70, 26 + catIdx * lh + lh / 2);
+      c.rotate(-0.21);
+      c.strokeStyle = 'rgba(200, 54, 43, 0.85)';
+      c.fillStyle = 'rgba(200, 54, 43, 0.85)';
+      c.lineWidth = 2.5;
+      c.font = `900 14px 'Pretendard Variable', sans-serif`;
+      const st = $('stamp').textContent;
+      const sw = c.measureText(st).width + 16;
+      c.strokeRect(-sw / 2, -13, sw, 26);
+      c.textAlign = 'center';
+      c.fillText(st, 0, 1);
+      c.restore();
+      const a = document.createElement('a');
+      a.download = `${YEAR}-연말영수증.png`;
+      a.href = cv.toDataURL('image/png');
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      toast('이미지를 저장했어요');
+    }
+
+    /* =========================================================
+       14. 내 영수증 만들기 (입력 칸 ↔ 데이터)
+       ========================================================= */
+    const DEFAULT_CATS = ['만든 것', '배운 것', '다녀온 곳', '소소한 성취'];
+    function fillEditor(d) {
+      $('f-name').value = d.name;
+      $('f-title').value = d.title;
+      $('f-thanks').value = d.thanks;
+      $('f-clabel').value = d.contact.label;
+      $('f-curl').value = d.contact.url.replace(/^mailto:/, '');
+      const cats = DEFAULT_CATS.map((n, i) => d.cats[i] || { name: n, items: [] });
+      $('f-cats').innerHTML = cats.map((c, i) => `
+        <label>분류 ${i + 1}<input type="text" class="cat-name" data-i="${i}" maxlength="12" value="${esc(c.name)}"></label>
+        <textarea data-i="${i}" aria-label="${esc(c.name)} 항목" spellcheck="false">${esc(c.items.map((it) => `${it.n}${it.q ? ` x${it.q}` : ''}${it.v ? ` / ${it.v}` : ''}`).join('\n'))}</textarea>`).join('');
+    }
+    // "개인 블로그 x1 / 글 24편" → { n, q, v }
+    function parseItem(line) {
+      const [left, ...rest] = line.split('/');
+      const v = rest.join('/').trim();
+      const m = left.trim().match(/^(.*?)(?:\s*[x×X*]\s*([\d,]+))?$/);
+      return { n: (m ? m[1] : left).trim(), q: m && m[2] ? Number(m[2].replace(/,/g, '')) : 0, v };
+    }
+    function readEditor() {
+      const cats = [...document.querySelectorAll('#f-cats textarea')].map((ta) => ({
+        name: document.querySelector(`#f-cats input[data-i="${ta.dataset.i}"]`).value.trim() || '항목',
+        items: ta.value.split('\n').map((s) => s.trim()).filter(Boolean).map(parseItem),
+      }));
+      return clean({ name: $('f-name').value, title: $('f-title').value, cats, thanks: $('f-thanks').value, contact: { label: $('f-clabel').value, url: $('f-curl').value } });
+    }
+
+    function openEditor() {
+      if (shared) { // 친구 영수증을 보다가 "나도 만들기"면 내 것(없으면 예시)으로 시작
+        const mine = store.get(STORE_KEY);
+        fillEditor(mine ? clean(JSON.parse(mine)) : clean(SAMPLE));
+      } else fillEditor(data);
+      $('editor').hidden = false;
+      $('editor').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function reprint() {
+      resetTear();
+      render();
+      $('stamp').classList.remove('on');
+      document.querySelector('.paper-wrap').scrollIntoView({ behavior: isFrame ? 'auto' : 'smooth', block: 'start' });
+    }
+
+    /* =========================================================
+       15. 버튼 연결
+       ========================================================= */
+    let toastTimer = 0;
+    function toast(msg) {
+      const t = $('toast');
+      t.textContent = msg;
+      t.classList.add('on');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => t.classList.remove('on'), 2200);
+    }
+
+    async function copy(text, msg) {
+      try { await navigator.clipboard.writeText(text); toast(msg); }
+      catch { prompt('아래 주소를 길게 눌러 복사하세요', text); }
+    }
+
+    $('tear-btn').addEventListener('click', tear);
+    $('barcode').addEventListener('click', () => {
+      if (data.contact.url) window.open(data.contact.url, '_blank', 'noopener');
+      else toast('연락처를 넣으면 바코드를 눌러 이동해요');
+    });
+    $('c-links').addEventListener('click', (e) => { if (e.target.dataset.act === 'mine') openEditor(); });
+    $('mine-btn').addEventListener('click', openEditor);
+    $('edit-btn').addEventListener('click', openEditor);
+    $('replay-btn').addEventListener('click', reprint);
+    $('print-btn').addEventListener('click', () => { lineEls.forEach((el) => el.classList.add('on')); window.print(); });
+    $('png-btn').addEventListener('click', () => savePng().catch(() => toast('이미지를 만들지 못했어요')));
+    $('share-btn').addEventListener('click', async () => {
+      const url = `${SITE}#r=${b64enc(JSON.stringify(data))}`;
+      if (navigator.share) {
+        try { await navigator.share({ title: `${data.name}의 ${YEAR} 연말 영수증`, url }); return; } catch (e) { if (e && e.name === 'AbortError') return; }
+      }
+      copy(url, '공유 링크를 복사했어요');
+    });
+    $('apply-btn').addEventListener('click', () => {
+      data = readEditor();
+      store.set(STORE_KEY, JSON.stringify(data));
+      if (shared) { shared = false; history.replaceState(null, '', location.pathname); $('shared-banner').hidden = true; }
+      reprint();
+      toast('내 영수증을 출력해요');
+    });
+    $('sample-btn').addEventListener('click', () => fillEditor(clean(SAMPLE)));
+    $('snow-btn').addEventListener('click', () => setSnow(!snowOn));
+    $('sound-btn').addEventListener('click', () => {
+      soundOn = !soundOn;
+      if (soundOn) ensureAudio();
+      $('sound-btn').setAttribute('aria-pressed', String(soundOn));
+      $('sound-btn').textContent = soundOn ? '🔊 소리' : '🔇 소리';
+    });
+    window.addEventListener('resize', () => { fitFont(); sizeSnow(); });
+    window.addEventListener('beforeprint', () => lineEls.forEach((el) => el.classList.add('on')));
+
+    /* =========================================================
+       16. 실행
+       ========================================================= */
+    function step(dt) {
+      clock += dt;
+      stepPrint(dt);
+      stepTear(dt);
+      stepSnow(dt);
+    }
+
+    document.fonts.load("16px 'Nanum Gothic Coding'").catch(() => {}).finally(() => {
+      render();
+      sizeSnow();
+      if (shared) $('shared-banner').hidden = false;
+      if (isFrame) {
+        document.body.classList.add('frame');
+        rnd = mulberry32(7);
+        audioLog = [];
+        window.__frame = {
+          step(dt) { step(dt); },
+          scroll(y) { window.scrollTo(0, y); },
+          snow(on) { setSnow(on); },
+          prewarm(sec) { for (let i = 0; i < sec * 30; i++) stepSnow(1 / 30); },
+          tear() { tear(); },
+          record() { clock = 0; audioLog = []; },
+          state() { return { printed: printQueue, total: lineEls.length, scrollMax: document.documentElement.scrollHeight - innerHeight, paperTop: $('paper').getBoundingClientRect().top + scrollY, stubTop: $('stub').getBoundingClientRect().top + scrollY }; },
+          async audio(sec, shift = 0) {
+            const rate = 44100;
+            const oc = new OfflineAudioContext(1, Math.ceil(sec * rate), rate);
+            const g = oc.createGain();
+            g.gain.value = 0.9;
+            g.connect(oc.destination);
+            for (const e of audioLog) { const t = e.t - shift; if (t >= 0 && t < sec) playSfx(oc, t, e.kind, g); }
+            const d = (await oc.startRendering()).getChannelData(0);
+            const i16 = new Int16Array(d.length);
+            for (let i = 0; i < d.length; i++) i16[i] = Math.max(-1, Math.min(1, d[i])) * 32767;
+            const u8 = new Uint8Array(i16.buffer);
+            let s = '';
+            for (let i = 0; i < u8.length; i += 0x8000) s += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000));
+            return btoa(s);
+          },
+        };
+        document.body.dataset.ready = '1';
+      } else {
+        let last = 0;
+        const loop = (t) => {
+          const dt = Math.min(0.05, (t - (last || t)) / 1000);
+          last = t;
+          step(dt);
+          requestAnimationFrame(loop);
+        };
+        requestAnimationFrame(loop);
+      }
+    });
+  </script>
+</body>
+</html>
