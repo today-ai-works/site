@@ -1,0 +1,1023 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>첫눈 발자국 한붓그리기 — 모든 눈밭을 한 번씩만 | 오늘의 AI 작품</title>
+  <meta name="description" content="첫눈 내린 아침 공원, 모든 눈 칸을 딱 한 번씩 밟고 대문까지 가는 한붓그리기 퍼즐. 빙판은 미끄러져요. 레벨은 항상 풀 수 있게 자동 생성되고, 오늘의 퍼즐도 있어요. 설치 없이 휴대폰과 PC에서 바로.">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="첫눈 발자국 한붓그리기">
+  <meta property="og:description" content="모든 눈밭을 딱 한 번씩 밟고 대문까지. 한붓에 다 밟을 수 있어?">
+  <meta property="og:url" content="https://today-ai-works.pages.dev/games/first-snow-steps/">
+  <link rel="canonical" href="https://today-ai-works.pages.dev/games/first-snow-steps/">
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+  <style>
+    /* =========================================================
+       1. 화면 배치: 전체 화면 캔버스 + 위 작은 막대 + 시작 · 클리어 창
+       ========================================================= */
+    :root {
+      --ink: #26323d;
+      --muted: #5f6f7c;
+      --paper: #f8fbfe;
+      --blue: #3b7dd8;
+      --red: #d8483b;
+      color-scheme: light;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      height: 100%;
+      overflow: hidden;
+      background: #cfe4f5;
+      color: var(--ink);
+      font-family: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+      -webkit-text-size-adjust: 100%;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    #game { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
+
+    .top { position: fixed; top: 0; left: 0; right: 0; z-index: 2; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: calc(8px + env(safe-area-inset-top)) 12px 8px; pointer-events: none; }
+    .top > * { pointer-events: auto; }
+    .top h1 { margin: 0; font-size: 0.95rem; font-weight: 800; pointer-events: none; }
+    .pill { font: inherit; font-size: 0.85rem; color: var(--ink); text-decoration: none; background: rgba(255, 255, 255, 0.75); border: 1px solid rgba(0, 0, 0, 0.08); border-radius: 999px; padding: 5px 11px; cursor: pointer; }
+
+    .overlay { position: fixed; inset: 0; z-index: 5; display: flex; align-items: center; justify-content: center; padding: 16px; overflow: auto; background: rgba(38, 50, 61, 0.35); }
+    .overlay[hidden] { display: none; }
+    .card { width: min(92vw, 390px); margin: auto; background: var(--paper); border-radius: 20px; padding: 20px 18px 14px; box-shadow: 0 12px 40px rgba(0, 0, 0, 0.22); text-align: center; }
+    .card .emoji { font-size: 2.1rem; line-height: 1.2; }
+    .card h1, .card h2 { margin: 6px 0 4px; font-size: 1.4rem; font-weight: 900; }
+    .card p { margin: 6px 0; color: var(--muted); line-height: 1.5; font-size: 0.95rem; }
+    .rules { margin: 12px 0 4px; padding: 0; list-style: none; text-align: left; font-size: 0.9rem; display: grid; gap: 6px; }
+    .rules li { display: flex; align-items: center; gap: 10px; background: #fff; border: 1px solid #dde8f1; border-radius: 12px; padding: 7px 10px; }
+    .rules canvas { width: 30px; height: 30px; flex: none; }
+    .btn { min-width: 120px; padding: 12px 16px; border: 1px solid #cddbe7; border-radius: 999px; background: #fff; color: var(--ink); font: inherit; font-weight: 800; cursor: pointer; }
+    .btn.primary { background: var(--blue); border-color: var(--blue); color: #fff; }
+    .btn.red { background: var(--red); border-color: var(--red); color: #fff; }
+    .btn:active { transform: scale(0.97); }
+    .col { display: grid; gap: 8px; margin-top: 14px; }
+    .row { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-top: 12px; }
+    .foot { margin-top: 12px; font-size: 0.8rem; color: var(--muted); }
+    .foot a { color: inherit; }
+    .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 10px; }
+    .stats div { background: #fff; border: 1px solid #dde8f1; border-radius: 12px; padding: 8px 4px; }
+    .stats b { display: block; font-size: 1.3rem; font-weight: 900; }
+    .stats span { font-size: 0.78rem; color: var(--muted); }
+    kbd { display: inline-block; padding: 0 5px; border: 1px solid #c7d3de; border-bottom-width: 2px; border-radius: 5px; background: #fff; font: inherit; font-size: 0.8rem; font-weight: 800; }
+    .only-pc, .only-touch { display: none; }
+    .pc .only-pc, .touch .only-touch { display: inline; }
+
+    .toast { position: fixed; left: 50%; top: 22%; transform: translate(-50%, -8px); background: rgba(38, 50, 61, 0.92); color: #fff; padding: 10px 16px; border-radius: 999px; font-weight: 800; font-size: 0.95rem; opacity: 0; transition: 0.18s ease; pointer-events: none; z-index: 4; white-space: nowrap; }
+    .toast.on { opacity: 1; transform: translate(-50%, 0); }
+
+    /* 영상 녹화용 (?frame): 릴스 안전 영역 안, 글자는 화면 정가운데 */
+    .frame-hook, .frame-cta { display: none; }
+    body.frame .top { display: none; }
+    body.frame .frame-hook, body.frame .frame-cta { display: block; position: fixed; left: 30px; right: 30px; z-index: 3; text-align: center; pointer-events: none; }
+    body.frame .frame-hook { top: 125px; }
+    body.frame .frame-cta { top: 702px; }
+    .frame-hook .tag { display: inline-block; padding: 4px 14px; border-radius: 999px; background: var(--red); color: #fff; font-weight: 900; font-size: 0.95rem; }
+    .frame-hook .hook { margin-top: 6px; font-size: 1.5rem; font-weight: 900; line-height: 1.28; color: var(--ink); }
+    .frame-cta .cta { font-size: 1.05rem; font-weight: 900; color: var(--ink); }
+    .frame-cta .url { margin-top: 2px; font-size: 0.85rem; font-weight: 800; color: var(--muted); }
+    body.frame .toast { top: 440px; font-size: 1.15rem; }
+  </style>
+</head>
+<body>
+  <canvas id="game" aria-label="첫눈 발자국 한붓그리기 게임 화면"></canvas>
+
+  <div class="top">
+    <button type="button" class="pill" id="menu-btn">☰ 처음</button>
+    <h1>첫눈 발자국 한붓그리기</h1>
+    <button type="button" class="pill" id="sound-btn" aria-label="소리 켜기 · 끄기">🔊</button>
+  </div>
+
+  <div class="frame-hook"><span class="tag" id="frame-tag">도전</span><div class="hook">모든 눈밭을 딱 한 번씩!<br>한붓에 다 밟을 수 있어? 👣</div></div>
+  <div class="frame-cta"><div class="cta" id="frame-cta-text">프로필 링크에서 직접 풀기</div><div class="url">today-ai-works.pages.dev</div></div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <!-- 시작 -->
+  <div class="overlay" id="start">
+    <div class="card">
+      <div class="emoji">❄️👣🏠</div>
+      <h1>첫눈 발자국 한붓그리기</h1>
+      <p>첫눈 내린 아침 공원. <b>모든 눈 칸을 딱 한 번씩</b> 밟고<br>집 대문까지 가세요.</p>
+      <ul class="rules">
+        <li><canvas data-kind="snow" width="60" height="60"></canvas><span>밟은 눈에는 발자국이 남아 <b>다시 못 밟아요</b></span></li>
+        <li><canvas data-kind="ice" width="60" height="60"></canvas><span><b>빙판</b>은 밟으면 막힐 때까지 미끄러져요 (레벨 3부터)</span></li>
+        <li><canvas data-kind="exit" width="60" height="60"></canvas><span>눈을 다 밟은 뒤에 <b>대문</b>으로</span></li>
+      </ul>
+      <p style="font-size:.85rem"><span class="only-pc"><kbd>←↑↓→</kbd> 이동 · <kbd>Z</kbd> 되돌리기 · <kbd>R</kbd> 다시</span><span class="only-touch">밀어서(스와이프) 이동 · 옆 칸을 눌러도 돼요</span></p>
+      <div class="col" id="mode-btns">
+        <button type="button" class="btn red" id="challenge-btn" hidden>도전</button>
+        <button type="button" class="btn primary" id="level-btn">단계 모드</button>
+        <button type="button" class="btn" id="daily-btn">📅 오늘의 퍼즐</button>
+      </div>
+      <p id="today-count" style="font-size:.85rem"></p>
+      <div class="foot"><a href="/">← 오늘의 AI 작품</a> · <a href="/privacy/">개인정보처리방침</a></div>
+    </div>
+  </div>
+
+  <!-- 클리어 -->
+  <div class="overlay" id="result" hidden>
+    <div class="card">
+      <div class="emoji">🎉</div>
+      <h2 id="res-title">클리어!</h2>
+      <p id="res-sub"></p>
+      <div class="stats">
+        <div><b id="res-moves">0</b><span>이동</span></div>
+        <div><b id="res-undo">0</b><span>되돌리기</span></div>
+        <div><b id="res-time">0:00</b><span>걸린 시간</span></div>
+      </div>
+      <div class="row">
+        <button type="button" class="btn primary" id="next-btn">다음 레벨</button>
+        <button type="button" class="btn" id="share-btn" hidden>📋 결과 복사</button>
+        <button type="button" class="btn" id="home-btn">처음으로</button>
+      </div>
+      <div class="foot"><a href="/">← 다른 작품 보러 가기</a></div>
+    </div>
+  </div>
+
+  <script src="/assets/challenges.js"></script>
+  <script>
+    /* =========================================================
+       1. 기본 설정
+       ========================================================= */
+    const GAME_KEY = 'first-snow-steps';
+    const params = new URLSearchParams(location.search);
+    const isFrame = params.has('frame'); // 영상 녹화용: 시간과 입력을 바깥에서 정한다
+    const isTouch = !isFrame && (window.matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window);
+    document.documentElement.classList.add(isTouch ? 'touch' : 'pc');
+    const $ = (id) => document.getElementById(id);
+
+    // 도전 문제 (영상 속 문제). challenges.js의 puzzle 값으로 고정한다
+    const CHALLENGES = Object.fromEntries((window.TAW_CHALLENGES || []).filter((c) => c.puzzle && c.puzzle.gameKey === GAME_KEY).map((c) => [c.no, c.puzzle]));
+
+    /* =========================================================
+       2. 난수 · 날짜
+       ========================================================= */
+    function mulberry32(a) {
+      return function () {
+        a |= 0; a = (a + 0x6d2b79f5) | 0;
+        let t = Math.imul(a ^ (a >>> 15), 1 | a);
+        t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      };
+    }
+    function hashStr(s) { let h = 2166136261; for (const ch of s) { h ^= ch.codePointAt(0); h = Math.imul(h, 16777619); } return h >>> 0; }
+    function today() { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; }
+    const store = {
+      get(k) { try { return localStorage.getItem(k); } catch { return null; } },
+      set(k, v) { try { localStorage.setItem(k, v); } catch { /* 저장이 막혀도 게임은 계속 */ } },
+    };
+
+    /* =========================================================
+       3. 레벨 생성: 해답 경로를 먼저 만들고 나머지를 장애물로
+          → 항상 풀 수 있다. 빙판은 경로가 곧게 지나가는 칸에만 둔다
+       ========================================================= */
+    const DIRS = [[-1, 0], [0, 1], [1, 0], [0, -1]]; // 위 · 오른쪽 · 아래 · 왼쪽
+
+    // 자기회피 랜덤 워크 + 백트래킹으로 target칸 길이의 경로 찾기
+    function randomPath(n, target, rng) {
+      const total = n * n;
+      const seen = new Uint8Array(total);
+      const start = Math.floor(rng() * total);
+      const path = [start];
+      seen[start] = 1;
+      const opts = [order(start)];
+      let steps = 0;
+      function free(i) {
+        const r = Math.floor(i / n), c = i % n;
+        let k = 0;
+        for (const [dr, dc] of DIRS) { const rr = r + dr, cc = c + dc; if (rr >= 0 && rr < n && cc >= 0 && cc < n && !seen[rr * n + cc]) k++; }
+        return k;
+      }
+      function order(i) {
+        const r = Math.floor(i / n), c = i % n;
+        const list = [];
+        for (const [dr, dc] of DIRS) { const rr = r + dr, cc = c + dc; if (rr >= 0 && rr < n && cc >= 0 && cc < n && !seen[rr * n + cc]) list.push(rr * n + cc); }
+        // 갈 곳이 적은 칸부터(구석부터 채우면 긴 경로가 잘 나온다), 같으면 무작위
+        return list.map((x) => [x, free(x) + rng() * 0.9]).sort((a, b) => b[1] - a[1]).map((x) => x[0]);
+      }
+      while (path.length < target) {
+        if (++steps > 40000) return null;
+        const o = opts[opts.length - 1];
+        if (!o.length) { // 막힘 → 한 칸 되돌림
+          seen[path.pop()] = 0;
+          opts.pop();
+          if (!path.length) return null;
+          continue;
+        }
+        const next = o.pop();
+        if (seen[next]) continue;
+        seen[next] = 1;
+        path.push(next);
+        opts.push(order(next));
+      }
+      return path;
+    }
+
+    // n×n, seed, ice(빙판 사용) → 퍼즐
+    function makePuzzle(n, seed, ice) {
+      const rng = mulberry32(seed);
+      for (let tries = 0; tries < 300; tries++) {
+        const target = Math.round(n * n * (0.7 + rng() * 0.15));
+        const path = randomPath(n, target, rng);
+        if (!path) continue;
+        // 장애물이 한 줄(가로 · 세로)에 몰리면 판이 작아 보이니 다시 만든다
+        const rowC = new Array(n).fill(0), colC = new Array(n).fill(0);
+        const onPath = new Uint8Array(n * n);
+        for (const i of path) onPath[i] = 1;
+        for (let i = 0; i < n * n; i++) if (!onPath[i]) { rowC[Math.floor(i / n)]++; colC[i % n]++; }
+        if (Math.max(...rowC, ...colC) > n - 3) continue;
+        const cells = new Array(n * n).fill(null).map(() => (rng() < 0.62 ? 'tree' : 'rock'));
+        for (const i of path) cells[i] = 'snow';
+        if (ice) {
+          // 경로가 곧게 지나가는 칸(들어온 방향 = 나가는 방향)만 빙판으로 → 해답이 그대로 유지된다
+          for (let k = 1; k < path.length - 1; k++) {
+            const a = path[k - 1], b = path[k], c = path[k + 1];
+            if (b - a === c - b && rng() < 0.3) cells[b] = 'ice';
+          }
+        }
+        cells[path[0]] = 'snow';
+        cells[path[path.length - 1]] = 'exit';
+        return { n, seed, ice, cells, start: path[0], exit: path[path.length - 1], solution: path };
+      }
+      throw new Error('퍼즐을 만들지 못했어요');
+    }
+
+    /* =========================================================
+       4. 규칙 (화면과 상관없는 순수 계산: 봇 · 시뮬레이션도 같은 함수를 쓴다)
+       ========================================================= */
+    const walkable = (p, i) => p.cells[i] !== 'tree' && p.cells[i] !== 'rock';
+    function neighbor(p, i, d) {
+      const r = Math.floor(i / p.n) + DIRS[d][0];
+      const c = (i % p.n) + DIRS[d][1];
+      if (r < 0 || r >= p.n || c < 0 || c >= p.n) return -1;
+      return r * p.n + c;
+    }
+    function countLeft(p, visited) { // 아직 안 밟은 눈 · 빙판 칸 (대문 제외)
+      let k = 0;
+      for (let i = 0; i < p.cells.length; i++) if (!visited[i] && (p.cells[i] === 'snow' || p.cells[i] === 'ice')) k++;
+      return k;
+    }
+    // d 방향으로 한 번 움직였을 때 밟게 되는 칸들. 못 가면 { block: 이유 }
+    function tryMove(p, visited, pos, d, left) {
+      const first = neighbor(p, pos, d);
+      if (first < 0 || !walkable(p, first)) return { block: 'wall' };
+      if (visited[first]) return { block: 'stepped' };
+      if (p.cells[first] === 'exit' && left > 0) return { block: 'early' };
+      const cells = [first];
+      let cur = first;
+      let remain = left - (p.cells[first] === 'exit' ? 0 : 1);
+      // 빙판이면 막힐 때까지 미끄러진다
+      while (p.cells[cur] === 'ice') {
+        const nx = neighbor(p, cur, d);
+        if (nx < 0 || !walkable(p, nx) || visited[nx] || cells.includes(nx)) break;
+        if (p.cells[nx] === 'exit' && remain > 0) break;
+        cells.push(nx);
+        if (p.cells[nx] !== 'exit') remain -= 1;
+        cur = nx;
+      }
+      return { cells };
+    }
+    function legalDirs(p, visited, pos, left) {
+      const out = [];
+      for (let d = 0; d < 4; d++) if (!tryMove(p, visited, pos, d, left).block) out.push(d);
+      return out;
+    }
+
+    // 되돌리기 없이 한 번에 다 밟을 확률 → 낮을수록 어려움
+    // smart: 사람처럼 "갈 곳이 적은 칸(구석)부터" 고르는 봇, 아니면 아무 길이나 고르는 봇
+    function randomSuccess(p, runs, rng, smart = false) {
+      let ok = 0;
+      for (let r = 0; r < runs; r++) {
+        const visited = new Uint8Array(p.cells.length);
+        let pos = p.start;
+        visited[pos] = 1;
+        let left = countLeft(p, visited);
+        for (;;) {
+          const ds = legalDirs(p, visited, pos, left);
+          if (!ds.length) break;
+          let d = ds[Math.floor(rng() * ds.length)];
+          if (smart && ds.length > 1) {
+            // 각 방향으로 간 뒤 다음에 갈 수 있는 길 수가 가장 적은 쪽 (같으면 무작위)
+            let bestK = 99;
+            for (const dd of ds) {
+              const mm = tryMove(p, visited, pos, dd, left);
+              for (const c of mm.cells) visited[c] = 1;
+              const end = mm.cells[mm.cells.length - 1];
+              const k = p.cells[end] === 'exit' ? 99 : legalDirs(p, visited, end, countLeft(p, visited)).length + rng() * 0.5;
+              for (const c of mm.cells) visited[c] = 0;
+              if (k < bestK) { bestK = k; d = dd; }
+            }
+          }
+          const m = tryMove(p, visited, pos, d, left);
+          for (const c of m.cells) visited[c] = 1;
+          pos = m.cells[m.cells.length - 1];
+          left = countLeft(p, visited);
+          if (p.cells[pos] === 'exit') { ok += 1; break; }
+        }
+      }
+      return ok / runs;
+    }
+
+    // 단계 모드: 레벨마다 크기 · 빙판 · 목표 난이도
+    function levelSpec(level) {
+      const n = Math.min(8, 4 + level);
+      return { n, ice: level >= 3, target: [0.6, 0.45, 0.35, 0.25][Math.min(3, level - 1)] };
+    }
+    // 후보 여러 개를 만들어 목표 난이도에 가장 가까운 것을 고른다
+    function pickPuzzle(n, ice, target, seed, candidates = 8) {
+      let best = null;
+      for (let k = 0; k < candidates; k++) {
+        const p = makePuzzle(n, (seed + k * 7919) >>> 0, ice);
+        const s = randomSuccess(p, 40, mulberry32(p.seed ^ 0x9e3779b9), true);
+        const score = Math.abs(Math.log((s + 0.004) / target));
+        if (!best || score < best.score) best = { p, s, score };
+      }
+      best.p.success = best.s;
+      return best.p;
+    }
+
+    /* =========================================================
+       5. 게임 상태
+       ========================================================= */
+    const G = {
+      state: 'menu', // menu → play → clear
+      mode: 'level', // level · daily · challenge
+      level: 1, label: '', puzzle: null, visited: null, enterDir: null, pos: 0,
+      history: [], moves: 0, undos: 0, t: 0, left: 0,
+      // 보이는 위치(부드럽게 따라감), 흔들림, 연출
+      show: { r: 0, c: 0 }, queue: [], bump: 0, bumpDir: 0, win: 0, clock: 0, log: null,
+    };
+
+    function startPuzzle(p, mode, label) {
+      G.puzzle = p;
+      G.mode = mode;
+      G.label = label;
+      G.visited = new Uint8Array(p.cells.length);
+      G.enterDir = new Int8Array(p.cells.length).fill(-1);
+      G.pos = p.start;
+      G.visited[p.start] = 1;
+      G.history = [];
+      G.moves = 0;
+      G.undos = 0;
+      G.t = 0;
+      G.left = countLeft(p, G.visited);
+      G.show = { r: Math.floor(p.start / p.n), c: p.start % p.n };
+      G.queue = [];
+      G.bump = 0;
+      G.win = 0;
+      G.state = 'play';
+      $('start').hidden = true;
+      $('result').hidden = true;
+      layout();
+    }
+
+    function move(d) {
+      if (G.state !== 'play') return;
+      const p = G.puzzle;
+      const m = tryMove(p, G.visited, G.pos, d, G.left);
+      if (m.block) {
+        G.bump = 0.25;
+        G.bumpDir = d;
+        sfx('bump');
+        if (m.block === 'early') toast(`아직 눈이 남았어요 (${G.left}칸)`);
+        else if (m.block === 'stepped') toast('이미 발자국이 있어요');
+        return;
+      }
+      G.history.push({ from: G.pos, cells: m.cells });
+      for (const c of m.cells) { G.visited[c] = 1; G.enterDir[c] = d; G.queue.push(c); }
+      G.pos = m.cells[m.cells.length - 1];
+      G.moves += 1;
+      G.left = countLeft(p, G.visited);
+      const slid = m.cells.length > 1 || p.cells[m.cells[0]] === 'ice';
+      sfx(slid ? 'slide' : 'step');
+      if (p.cells[G.pos] === 'exit') { clear(); return; }
+      if (!legalDirs(p, G.visited, G.pos, G.left).length) {
+        toast(`막혔어요! 남은 눈 ${G.left}칸 · 되돌리기`);
+        sfx('stuck');
+      }
+    }
+
+    function undo() {
+      if (G.state !== 'play' || !G.history.length) return;
+      const h = G.history.pop();
+      for (const c of h.cells) { G.visited[c] = 0; G.enterDir[c] = -1; }
+      G.pos = h.from;
+      G.undos += 1;
+      G.left = countLeft(G.puzzle, G.visited);
+      G.queue = [];
+      G.show = { r: Math.floor(G.pos / G.puzzle.n), c: G.pos % G.puzzle.n };
+      sfx('undo');
+    }
+
+    function restart() {
+      if (!G.puzzle || G.state === 'menu') return;
+      const u = G.undos;
+      startPuzzle(G.puzzle, G.mode, G.label);
+      G.undos = u;
+    }
+
+    /* =========================================================
+       6. 클리어 · 기록 (이용자 브라우저에만 저장)
+       ========================================================= */
+    const LEVEL_KEY = `taw:${GAME_KEY}:level`;
+    const SEED_KEY = `taw:${GAME_KEY}:seed`;
+    const countKey = () => `taw:${GAME_KEY}:today:${today()}`;
+    const dailyKey = () => `taw:${GAME_KEY}:daily:${today()}`;
+    const mmss = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
+
+    function clear() {
+      G.state = 'clear';
+      G.win = 0.001;
+      sfx('win');
+      burst();
+      if (isFrame) return;
+      store.set(countKey(), String((Number(store.get(countKey())) || 0) + 1));
+      if (G.mode === 'level') {
+        store.set(LEVEL_KEY, String(G.level + 1));
+        store.set(SEED_KEY, '');
+      }
+      if (G.mode === 'daily') store.set(dailyKey(), JSON.stringify({ moves: G.moves, undos: G.undos, t: Math.round(G.t) }));
+      if (G.mode === 'challenge') store.set(`taw:${GAME_KEY}:challenge:${params.get('c')}`, JSON.stringify({ finished: true, moves: G.moves, undos: G.undos })); // /challenge/ 목록에 ✔ 표시
+      setTimeout(showResult, 1300);
+    }
+
+    function showResult() {
+      $('res-title').textContent = G.mode === 'level' ? `레벨 ${G.level} 클리어!` : G.mode === 'daily' ? '오늘의 퍼즐 클리어!' : `${G.label} 성공!`;
+      $('res-sub').textContent = `${G.puzzle.n}×${G.puzzle.n} 눈밭을 한 번씩 다 밟았어요 · 오늘 ${Number(store.get(countKey())) || 0}판 클리어`;
+      $('res-moves').textContent = G.moves;
+      $('res-undo').textContent = G.undos;
+      $('res-time').textContent = mmss(G.t);
+      $('next-btn').hidden = G.mode !== 'level';
+      $('share-btn').hidden = G.mode === 'level';
+      $('result').hidden = false;
+    }
+
+    function shareText() {
+      const head = G.mode === 'daily' ? `첫눈 발자국 오늘의 퍼즐 ${today().slice(5).replace('-', '/')}` : `첫눈 발자국 ${G.label}`;
+      return `${head} ✅\n👣 이동 ${G.moves} · ↩ 되돌리기 ${G.undos} · ⏱ ${mmss(G.t)}\nhttps://today-ai-works.pages.dev/games/first-snow-steps/`;
+    }
+
+    /* =========================================================
+       7. 모드 시작
+       ========================================================= */
+    function startLevel() {
+      ensureAudio();
+      G.level = Math.max(1, Number(store.get(LEVEL_KEY)) || 1);
+      let seed = Number(store.get(SEED_KEY));
+      if (!seed) { seed = Math.floor(Math.random() * 1e9) + 1; store.set(SEED_KEY, String(seed)); } // 새로고침해도 같은 문제
+      const s = levelSpec(G.level);
+      startPuzzle(pickPuzzle(s.n, s.ice, s.target, seed), 'level', `레벨 ${G.level}`);
+    }
+    function startDaily() {
+      ensureAudio();
+      startPuzzle(pickPuzzle(7, true, 0.12, hashStr(`daily:${today()}`)), 'daily', '오늘의 퍼즐');
+    }
+    function startChallenge(no) {
+      ensureAudio();
+      const c = CHALLENGES[no];
+      startPuzzle(makePuzzle(c.size, c.seed, c.ice), 'challenge', `도전 #${no}`);
+    }
+
+    /* =========================================================
+       8. 효과음 (Web Audio로 직접 만든 소리)
+       ========================================================= */
+    let AC = null;
+    let soundOn = store.get(`taw:${GAME_KEY}:sound`) !== 'off';
+    function ensureAudio() {
+      if (isFrame) return;
+      try {
+        if (!AC) AC = new (window.AudioContext || window.webkitAudioContext)();
+        if (AC.state === 'suspended') AC.resume();
+      } catch { AC = null; }
+    }
+    function noise(ac) {
+      if (ac.__nz) return ac.__nz;
+      const b = ac.createBuffer(1, ac.sampleRate * 0.6, ac.sampleRate);
+      const d = b.getChannelData(0);
+      let s = 987654;
+      for (let i = 0; i < d.length; i++) { s = (s * 1103515245 + 12345) & 0x7fffffff; d[i] = (s / 0x7fffffff) * 2 - 1; }
+      return (ac.__nz = b);
+    }
+    function playSfx(ac, t, kind, dest) {
+      const nz = (at, dur, type, freq, q, vol, toFreq) => {
+        const src = ac.createBufferSource();
+        src.buffer = noise(ac);
+        const f = ac.createBiquadFilter();
+        f.type = type;
+        f.frequency.setValueAtTime(freq, t + at);
+        if (toFreq) f.frequency.exponentialRampToValueAtTime(toFreq, t + at + dur);
+        f.Q.value = q;
+        const g = ac.createGain();
+        g.gain.setValueAtTime(0.0001, t + at);
+        g.gain.exponentialRampToValueAtTime(vol, t + at + 0.008);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + at + dur);
+        src.connect(f).connect(g).connect(dest);
+        src.start(t + at, (at * 13) % 0.4);
+        src.stop(t + at + dur + 0.02);
+      };
+      const tone = (at, freq, dur, type, vol) => {
+        const o = ac.createOscillator();
+        const g = ac.createGain();
+        o.type = type;
+        o.frequency.value = freq;
+        g.gain.setValueAtTime(0.0001, t + at);
+        g.gain.exponentialRampToValueAtTime(vol, t + at + 0.01);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + at + dur);
+        o.connect(g).connect(dest);
+        o.start(t + at);
+        o.stop(t + at + dur + 0.02);
+      };
+      switch (kind) {
+        case 'step': nz(0, 0.09, 'lowpass', 900, 0.7, 0.55); nz(0.03, 0.07, 'bandpass', 2200, 1.2, 0.18); break; // 뽀득
+        case 'slide': nz(0, 0.35, 'bandpass', 3200, 2, 0.22, 1400); break; // 쓰윽
+        case 'bump': tone(0, 120, 0.12, 'sine', 0.3); break;
+        case 'undo': tone(0, 520, 0.08, 'triangle', 0.12); tone(0.05, 390, 0.08, 'triangle', 0.1); break;
+        case 'stuck': tone(0, 330, 0.18, 'triangle', 0.16); tone(0.12, 247, 0.26, 'triangle', 0.16); break;
+        case 'win': [523.25, 659.25, 783.99, 1046.5, 1318.5].forEach((f, i) => tone(i * 0.09, f, 0.35, 'sine', 0.2)); break;
+        default: break;
+      }
+    }
+    function sfx(kind) {
+      if (isFrame) { if (G.log) G.log.push({ t: G.clock, kind }); return; }
+      if (!soundOn || !AC) return;
+      playSfx(AC, AC.currentTime, kind, AC.destination);
+    }
+
+    /* =========================================================
+       9. 그리기
+       ========================================================= */
+    const canvas = $('game');
+    const ctx = canvas.getContext('2d');
+    const FONT = "'Pretendard Variable', Pretendard, 'Malgun Gothic', sans-serif";
+    const CW = 360, BOARD_Y = 74, BOARD = 360, BTN_Y = 448, BTN_H = 50, CH = BTN_Y + BTN_H;
+    let W = 0, H = 0, DPR = 1, S = 1, OX = 0, OY = 0;
+    let vrand = Math.random;
+
+    function layout() {
+      W = window.innerWidth;
+      H = window.innerHeight;
+      DPR = isFrame ? 2 : Math.min(2.5, window.devicePixelRatio || 1);
+      canvas.width = Math.round(W * DPR);
+      canvas.height = Math.round(H * DPR);
+      let top, bottom;
+      if (isFrame) {
+        top = document.querySelector('.frame-hook').getBoundingClientRect().bottom + 8;
+        bottom = document.querySelector('.frame-cta').getBoundingClientRect().top - 8;
+        S = Math.min(380 / CW, (bottom - top) / CH);
+      } else {
+        top = 48;
+        bottom = H - 14;
+        S = Math.min((W - 20) / CW, (bottom - top) / CH, 1.7);
+      }
+      OX = (W - CW * S) / 2;
+      OY = top + Math.max(0, (bottom - top) - CH * S) * 0.4;
+      initSnow();
+    }
+
+    // 눈송이 (화면 좌표)
+    let flakes = [];
+    function initSnow() {
+      const n = Math.round((W * H) / 7000);
+      flakes = Array.from({ length: n }, () => ({ x: vrand() * W, y: vrand() * H, r: 1 + vrand() * 2.4, vy: 12 + vrand() * 20, ph: vrand() * 6.28 }));
+    }
+    function burst() { // 클리어: 눈이 펑펑
+      for (let i = 0; i < 220; i++) flakes.push({ x: vrand() * W, y: -vrand() * H * 0.8, r: 1.5 + vrand() * 3.5, vy: 60 + vrand() * 90, ph: vrand() * 6.28, extra: true });
+    }
+    function updateSnow(dt) {
+      for (const f of flakes) {
+        f.y += f.vy * dt;
+        f.ph += dt * 1.2;
+        f.x += Math.sin(f.ph) * 10 * dt;
+        if (f.y > H + 5) { if (f.extra) f.dead = true; else { f.y = -5; f.x = vrand() * W; } }
+      }
+      if (flakes.some((f) => f.dead)) flakes = flakes.filter((f) => !f.dead);
+    }
+
+    function rr(x, y, w, h, r) {
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.arcTo(x + w, y, x + w, y + h, r);
+      ctx.arcTo(x + w, y + h, x, y + h, r);
+      ctx.arcTo(x, y + h, x, y, r);
+      ctx.arcTo(x, y, x + w, y, r);
+      ctx.closePath();
+    }
+
+    // 칸 하나 그리기 (c: 캔버스, x · y · s: 칸 위치 · 크기)
+    function drawCell(c, kind, x, y, s, opt = {}) {
+      const pad = Math.max(1, s * 0.03);
+      const r = s * 0.14;
+      const box = (fill) => { c.fillStyle = fill; c.beginPath(); c.roundRect(x + pad, y + pad, s - pad * 2, s - pad * 2, r); c.fill(); };
+      if (kind === 'tree') {
+        box('#e4eef6');
+        c.fillStyle = '#7a5537';
+        c.fillRect(x + s * 0.45, y + s * 0.68, s * 0.1, s * 0.18);
+        for (const [k, w] of [[0.18, 0.62], [0.36, 0.5]]) {
+          c.fillStyle = '#2f7a4f';
+          c.beginPath();
+          c.moveTo(x + s * 0.5, y + s * (k - 0.02));
+          c.lineTo(x + s * (0.5 + w / 2), y + s * (k + 0.42));
+          c.lineTo(x + s * (0.5 - w / 2), y + s * (k + 0.42));
+          c.closePath();
+          c.fill();
+        }
+        c.fillStyle = '#ffffff'; // 나무 위 눈
+        c.beginPath();
+        c.moveTo(x + s * 0.5, y + s * 0.15);
+        c.lineTo(x + s * 0.62, y + s * 0.33);
+        c.lineTo(x + s * 0.38, y + s * 0.33);
+        c.closePath();
+        c.fill();
+        return;
+      }
+      if (kind === 'rock') {
+        box('#e4eef6');
+        c.fillStyle = '#8b96a3';
+        c.beginPath();
+        c.ellipse(x + s * 0.5, y + s * 0.6, s * 0.3, s * 0.22, 0, 0, Math.PI * 2);
+        c.fill();
+        c.fillStyle = '#ffffff';
+        c.beginPath();
+        c.ellipse(x + s * 0.48, y + s * 0.47, s * 0.22, s * 0.09, 0, 0, Math.PI * 2);
+        c.fill();
+        return;
+      }
+      if (kind === 'ice') {
+        box(opt.visited ? '#a9d3ee' : '#bfe3f8');
+        c.strokeStyle = 'rgba(255, 255, 255, 0.85)';
+        c.lineWidth = Math.max(1, s * 0.04);
+        c.beginPath();
+        c.moveTo(x + s * 0.25, y + s * 0.62); c.lineTo(x + s * 0.5, y + s * 0.3);
+        c.moveTo(x + s * 0.45, y + s * 0.72); c.lineTo(x + s * 0.7, y + s * 0.42);
+        c.stroke();
+      } else if (kind === 'exit') {
+        box(opt.ready ? '#fff4d6' : '#f6f9fc');
+        // 대문: 기와 지붕 + 나무 문 두 짝
+        c.fillStyle = '#4b5260';
+        c.fillRect(x + s * 0.16, y + s * 0.2, s * 0.68, s * 0.1);
+        c.fillStyle = '#ffffff';
+        c.fillRect(x + s * 0.16, y + s * 0.17, s * 0.68, s * 0.04);
+        c.fillStyle = opt.ready ? '#c0782f' : '#9a6a3f';
+        const open = opt.ready ? s * 0.05 : 0;
+        c.fillRect(x + s * 0.22 - open, y + s * 0.32, s * 0.27, s * 0.5);
+        c.fillRect(x + s * 0.51 + open, y + s * 0.32, s * 0.27, s * 0.5);
+        c.fillStyle = '#e9c46a';
+        c.beginPath(); c.arc(x + s * 0.45 - open, y + s * 0.58, s * 0.025, 0, 7); c.fill();
+        c.beginPath(); c.arc(x + s * 0.55 + open, y + s * 0.58, s * 0.025, 0, 7); c.fill();
+        return;
+      } else {
+        box(opt.visited ? '#e7eef5' : '#ffffff');
+        if (!opt.visited) { // 반짝이는 새 눈
+          c.fillStyle = 'rgba(160, 200, 235, 0.55)';
+          c.beginPath(); c.arc(x + s * 0.28, y + s * 0.3, s * 0.025, 0, 7); c.fill();
+          c.beginPath(); c.arc(x + s * 0.7, y + s * 0.66, s * 0.02, 0, 7); c.fill();
+        }
+      }
+      if (opt.visited && opt.dir >= 0) drawFoot(c, x + s / 2, y + s / 2, s, opt.dir, kind === 'ice');
+    }
+
+    // 발자국: 회색 타원 두 개 (들어온 방향으로)
+    function drawFoot(c, cx, cy, s, d, ice) {
+      const ang = [0, Math.PI / 2, Math.PI, -Math.PI / 2][d];
+      c.save();
+      c.translate(cx, cy);
+      c.rotate(ang);
+      if (ice) {
+        c.strokeStyle = 'rgba(255, 255, 255, 0.9)';
+        c.lineWidth = s * 0.05;
+        c.beginPath(); c.moveTo(-s * 0.1, s * 0.32); c.lineTo(-s * 0.1, -s * 0.32); c.moveTo(s * 0.1, s * 0.32); c.lineTo(s * 0.1, -s * 0.32); c.stroke();
+      } else {
+        c.fillStyle = 'rgba(120, 138, 156, 0.55)';
+        c.beginPath(); c.ellipse(-s * 0.11, s * 0.08, s * 0.07, s * 0.13, 0, 0, 7); c.fill();
+        c.beginPath(); c.ellipse(s * 0.11, -s * 0.1, s * 0.07, s * 0.13, 0, 0, 7); c.fill();
+      }
+      c.restore();
+    }
+
+    function drawPlayer(cx, cy, s) {
+      // 빨간 털모자 아이 (위에서 내려다본 모습)
+      ctx.fillStyle = 'rgba(40, 60, 80, 0.18)';
+      ctx.beginPath(); ctx.ellipse(cx, cy + s * 0.22, s * 0.26, s * 0.09, 0, 0, 7); ctx.fill();
+      ctx.fillStyle = '#2d4a6e';
+      ctx.beginPath(); ctx.ellipse(cx, cy + s * 0.1, s * 0.22, s * 0.18, 0, 0, 7); ctx.fill();
+      ctx.fillStyle = '#ffd9b8';
+      ctx.beginPath(); ctx.arc(cx, cy - s * 0.08, s * 0.17, 0, 7); ctx.fill();
+      ctx.fillStyle = '#d8483b';
+      ctx.beginPath(); ctx.arc(cx, cy - s * 0.12, s * 0.17, Math.PI, 0); ctx.fill();
+      ctx.fillRect(cx - s * 0.18, cy - s * 0.14, s * 0.36, s * 0.05);
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath(); ctx.arc(cx, cy - s * 0.3, s * 0.05, 0, 7); ctx.fill();
+      ctx.fillStyle = '#26323d';
+      ctx.beginPath(); ctx.arc(cx - s * 0.06, cy - s * 0.05, s * 0.022, 0, 7); ctx.fill();
+      ctx.beginPath(); ctx.arc(cx + s * 0.06, cy - s * 0.05, s * 0.022, 0, 7); ctx.fill();
+    }
+
+    const BTNS = [
+      { id: 'undo', label: '↩ 되돌리기', key: 'Z', x: 0, w: 176 },
+      { id: 'restart', label: '⟲ 다시', key: 'R', x: 184, w: 176 },
+    ];
+    let btnFlash = { undo: 0, restart: 0 };
+
+    function draw() {
+      ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+      const sky = ctx.createLinearGradient(0, 0, 0, H);
+      sky.addColorStop(0, '#cfe6f7');
+      sky.addColorStop(1, '#eef6fc');
+      ctx.fillStyle = sky;
+      ctx.fillRect(0, 0, W, H);
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+      for (const f of flakes) { ctx.beginPath(); ctx.arc(f.x, f.y, f.r, 0, 7); ctx.fill(); }
+      const p = G.puzzle;
+      if (!p) return;
+      ctx.setTransform(DPR * S, 0, 0, DPR * S, DPR * OX, DPR * OY);
+
+      // 위 정보
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+      rr(0, 0, CW, 62, 14);
+      ctx.fill();
+      ctx.fillStyle = '#26323d';
+      ctx.textBaseline = 'middle';
+      ctx.font = `900 16px ${FONT}`;
+      ctx.textAlign = 'left';
+      ctx.fillText(`${G.label} · ${p.n}×${p.n}`, 12, 20);
+      ctx.textAlign = 'right';
+      ctx.fillStyle = G.left ? '#3b7dd8' : '#2f8a57';
+      ctx.fillText(G.left ? `남은 눈 ${G.left}칸` : '대문으로! 🏠', 348, 20);
+      ctx.fillStyle = '#5f6f7c';
+      ctx.font = `700 13px ${FONT}`;
+      ctx.textAlign = 'left';
+      ctx.fillText(`👣 ${G.moves}  ↩ ${G.undos}  ⏱ ${mmss(G.t)}`, 12, 44);
+      ctx.textAlign = 'right';
+      if (!isFrame) ctx.fillText(`오늘 클리어 ${Number(store.get(countKey())) || 0}`, 348, 44);
+
+      // 판
+      const cs = BOARD / p.n;
+      ctx.fillStyle = '#cfe0ee';
+      rr(-4, BOARD_Y - 4, BOARD + 8, BOARD + 8, 14);
+      ctx.fill();
+      const ready = G.left === 0;
+      for (let i = 0; i < p.cells.length; i++) {
+        const x = (i % p.n) * cs;
+        const y = BOARD_Y + Math.floor(i / p.n) * cs;
+        drawCell(ctx, p.cells[i], x, y, cs, { visited: !!G.visited[i] && i !== p.start || (i === p.start && G.visited[i] && G.pos !== p.start), dir: G.enterDir[i], ready });
+        if (i === p.start && G.pos !== p.start) { // 출발점 표시
+          ctx.fillStyle = 'rgba(59, 125, 216, 0.5)';
+          ctx.font = `800 ${cs * 0.2}px ${FONT}`;
+          ctx.textAlign = 'center';
+          ctx.fillText('출발', x + cs / 2, y + cs * 0.2);
+        }
+      }
+      // 사람 (보이는 위치는 실제 위치를 부드럽게 따라간다)
+      let bx = 0, by = 0;
+      if (G.bump > 0) { const k = Math.sin(G.bump * 60) * cs * 0.06; bx = DIRS[G.bumpDir][1] * k; by = DIRS[G.bumpDir][0] * k; }
+      drawPlayer(G.show.c * cs + cs / 2 + bx, BOARD_Y + G.show.r * cs + cs / 2 + by, cs);
+
+      // 버튼
+      for (const b of BTNS) {
+        const f = btnFlash[b.id];
+        ctx.fillStyle = f > 0 ? '#ffe7a3' : '#ffffff';
+        ctx.strokeStyle = 'rgba(38, 50, 61, 0.25)';
+        ctx.lineWidth = 1.5;
+        rr(b.x, BTN_Y, b.w, BTN_H, 14);
+        ctx.fill();
+        ctx.stroke();
+        ctx.fillStyle = '#26323d';
+        ctx.font = `800 16px ${FONT}`;
+        ctx.textAlign = 'center';
+        ctx.fillText(isTouch || isFrame ? b.label : `${b.label} (${b.key})`, b.x + b.w / 2, BTN_Y + BTN_H / 2 + 1);
+      }
+
+      // 클리어: 판 위에 크게
+      if (G.state === 'clear') {
+        const a = Math.min(1, G.win * 3);
+        ctx.globalAlpha = a;
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.82)';
+        rr(40, BOARD_Y + BOARD / 2 - 46, 280, 92, 20);
+        ctx.fill();
+        ctx.fillStyle = '#2f8a57';
+        ctx.font = `900 30px ${FONT}`;
+        ctx.textAlign = 'center';
+        ctx.fillText('한붓에 완주! 🎉', 180, BOARD_Y + BOARD / 2 - 10);
+        ctx.fillStyle = '#5f6f7c';
+        ctx.font = `700 14px ${FONT}`;
+        ctx.fillText(`이동 ${G.moves} · 되돌리기 ${G.undos}`, 180, BOARD_Y + BOARD / 2 + 24);
+        ctx.globalAlpha = 1;
+      }
+    }
+
+    function update(dt) {
+      G.clock += dt;
+      updateSnow(dt);
+      if (G.state === 'play') G.t += dt;
+      if (G.state === 'clear') G.win += dt;
+      G.bump = Math.max(0, G.bump - dt);
+      for (const k in btnFlash) btnFlash[k] = Math.max(0, btnFlash[k] - dt * 5);
+      // 보이는 위치를 줄 선 칸들로 차례로 옮김 (한 칸 0.08초)
+      const p = G.puzzle;
+      let budget = dt / 0.08;
+      while (p && G.queue.length && budget > 0) {
+        const tgt = G.queue[0];
+        const tr = Math.floor(tgt / p.n), tc = tgt % p.n;
+        const dr = tr - G.show.r, dc = tc - G.show.c;
+        const dist = Math.hypot(dr, dc);
+        if (dist <= budget) { G.show = { r: tr, c: tc }; G.queue.shift(); budget -= dist; }
+        else { G.show = { r: G.show.r + (dr / dist) * budget, c: G.show.c + (dc / dist) * budget }; budget = 0; }
+      }
+    }
+
+    /* =========================================================
+       10. 입력: 방향키 · WASD · 스와이프 · 옆 칸 누르기
+       ========================================================= */
+    let toastTimer = 0;
+    function toast(msg) {
+      const t = $('toast');
+      t.textContent = msg;
+      t.classList.add('on');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => t.classList.remove('on'), isFrame ? 100000 : 1600);
+    }
+    function pressBtn(id) {
+      btnFlash[id] = 1;
+      if (id === 'undo') undo(); else restart();
+    }
+
+    if (!isFrame) {
+      const KEYS = { ArrowUp: 0, KeyW: 0, ArrowRight: 1, KeyD: 1, ArrowDown: 2, KeyS: 2, ArrowLeft: 3, KeyA: 3 };
+      window.addEventListener('keydown', (e) => {
+        if (e.ctrlKey || e.metaKey || e.altKey) return;
+        if (e.code in KEYS && G.state === 'play') { e.preventDefault(); move(KEYS[e.code]); return; }
+        if (e.code === 'KeyZ') { pressBtn('undo'); return; }
+        if (e.code === 'KeyR') { pressBtn('restart'); return; }
+        if ((e.code === 'Enter' || e.code === 'Space') && G.state === 'clear' && !$('result').hidden && G.mode === 'level') { e.preventDefault(); nextLevel(); }
+      });
+      let down = null;
+      canvas.addEventListener('pointerdown', (e) => { e.preventDefault(); down = { x: e.clientX, y: e.clientY }; });
+      canvas.addEventListener('pointerup', (e) => {
+        if (!down || G.state !== 'play') { down = null; return; }
+        const dx = e.clientX - down.x, dy = e.clientY - down.y;
+        down = null;
+        if (Math.hypot(dx, dy) > 24) { // 스와이프
+          move(Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 1 : 3) : (dy > 0 ? 2 : 0));
+          return;
+        }
+        // 짧게 누름: 버튼 또는 옆 칸
+        const x = (e.clientX - OX) / S, y = (e.clientY - OY) / S;
+        for (const b of BTNS) if (x >= b.x && x <= b.x + b.w && y >= BTN_Y - 6 && y <= BTN_Y + BTN_H + 6) { pressBtn(b.id); return; }
+        const p = G.puzzle;
+        const cs = BOARD / p.n;
+        const c = Math.floor(x / cs), r = Math.floor((y - BOARD_Y) / cs);
+        const pr = Math.floor(G.pos / p.n), pc = G.pos % p.n;
+        if (r < 0 || r >= p.n || c < 0 || c >= p.n) return;
+        if (r === pr && c !== pc) move(c > pc ? 1 : 3);
+        else if (c === pc && r !== pr) move(r > pr ? 2 : 0);
+      });
+      window.addEventListener('resize', layout);
+    }
+
+    function nextLevel() {
+      $('result').hidden = true;
+      startLevel();
+    }
+    function toMenu() {
+      G.state = 'menu';
+      $('result').hidden = true;
+      paintMenu();
+      $('start').hidden = false;
+    }
+    function paintMenu() {
+      const lv = Math.max(1, Number(store.get(LEVEL_KEY)) || 1);
+      const s = levelSpec(lv);
+      $('level-btn').textContent = `단계 모드 · 레벨 ${lv} (${s.n}×${s.n})`;
+      const d = store.get(dailyKey());
+      $('daily-btn').textContent = d ? `📅 오늘의 퍼즐 ✅ (이동 ${JSON.parse(d).moves})` : '📅 오늘의 퍼즐 (7×7 · 빙판)';
+      const no = Number(params.get('c'));
+      if (CHALLENGES[no]) {
+        $('challenge-btn').hidden = false;
+        $('challenge-btn').textContent = `🎬 영상 속 도전 #${no} 풀기${store.get(`taw:${GAME_KEY}:challenge:${no}`) ? ' ✅' : ''}`;
+      }
+      const cnt = Number(store.get(countKey())) || 0;
+      $('today-count').textContent = cnt ? `오늘 ${cnt}판 클리어했어요` : '';
+    }
+
+    $('level-btn').addEventListener('click', startLevel);
+    $('daily-btn').addEventListener('click', startDaily);
+    $('challenge-btn').addEventListener('click', () => startChallenge(Number(params.get('c'))));
+    $('next-btn').addEventListener('click', nextLevel);
+    $('home-btn').addEventListener('click', toMenu);
+    $('menu-btn').addEventListener('click', toMenu);
+    $('share-btn').addEventListener('click', async () => {
+      const text = shareText();
+      try { await navigator.clipboard.writeText(text); toast('결과를 복사했어요'); } catch { prompt('아래 내용을 복사하세요', text); }
+    });
+    const paintSound = () => { $('sound-btn').textContent = soundOn ? '🔊' : '🔇'; };
+    $('sound-btn').addEventListener('click', () => { soundOn = !soundOn; store.set(`taw:${GAME_KEY}:sound`, soundOn ? 'on' : 'off'); if (soundOn) ensureAudio(); paintSound(); });
+    paintSound();
+
+    // 시작 화면의 칸 그림
+    document.querySelectorAll('.rules canvas').forEach((cv) => {
+      const c = cv.getContext('2d');
+      const k = cv.dataset.kind;
+      drawCell(c, k === 'snow' ? 'snow' : k, 0, 0, 60, { visited: k === 'snow', dir: 0 });
+    });
+
+    /* =========================================================
+       11. 실행
+       ========================================================= */
+    let last = 0;
+    function loop(t) {
+      const dt = Math.min(0.05, (t - (last || t)) / 1000);
+      last = t;
+      update(dt);
+      draw();
+      requestAnimationFrame(loop);
+    }
+
+    if (isFrame) {
+      document.body.classList.add('frame');
+      vrand = mulberry32(5);
+      const no = Number(params.get('c')) || 0;
+      if (no) {
+        $('frame-tag').textContent = `도전 #${no}`;
+        $('frame-cta-text').textContent = `프로필 링크에서 도전 #${no} 직접 풀기`;
+      }
+      $('start').hidden = true;
+      layout();
+      window.__frame = {
+        start(no) { const c = CHALLENGES[no]; startPuzzle(makePuzzle(c.size, c.seed, c.ice), 'challenge', `도전 #${no}`); G.log = []; G.clock = 0; },
+        prewarm(sec) { for (let i = 0; i < sec * 30; i++) updateSnow(1 / 30); },
+        move(d) { move(d); },
+        undo() { pressBtn('undo'); },
+        step(dt) { update(dt); draw(); },
+        state() { return { left: G.left, pos: G.pos, moves: G.moves, legal: legalDirs(G.puzzle, G.visited, G.pos, G.left), solution: G.puzzle.solution, cells: G.puzzle.cells, n: G.puzzle.n, state: G.state }; },
+        // 정답과 다른 길로 가다가 막히는 시도 (영상용: 답을 보여 주지 않는다)
+        attempt(seed, minLeft = 3) {
+          const p = G.puzzle;
+          const rng = mulberry32(seed);
+          let best = null;
+          for (let k = 0; k < 4000; k++) {
+            const visited = new Uint8Array(p.cells.length);
+            let pos = p.start;
+            visited[pos] = 1;
+            let left = countLeft(p, visited);
+            const dirs = [];
+            const cells = [pos];
+            for (;;) {
+              const ds = legalDirs(p, visited, pos, left);
+              if (!ds.length) break;
+              const d = ds[Math.floor(rng() * ds.length)];
+              const m = tryMove(p, visited, pos, d, left);
+              for (const c of m.cells) { visited[c] = 1; cells.push(c); }
+              dirs.push(d);
+              pos = m.cells[m.cells.length - 1];
+              left = countLeft(p, visited);
+              if (p.cells[pos] === 'exit') break;
+            }
+            if (p.cells[pos] === 'exit' || left < minLeft) continue;
+            // 정답 경로와 처음 3칸 안에서 갈라지는 시도만
+            let same = 0;
+            while (same < cells.length && cells[same] === p.solution[same]) same++;
+            if (same > 3) continue;
+            const score = cells.length - left * 0.5;
+            if (!best || score > best.score) best = { dirs, left, score, len: cells.length };
+          }
+          return best;
+        },
+        toast(msg) { toast(msg); },
+        hideToast() { $('toast').classList.remove('on'); },
+        async audio(sec, shift = 0) {
+          const rate = 44100;
+          const oc = new OfflineAudioContext(1, Math.ceil(sec * rate), rate);
+          const g = oc.createGain();
+          g.gain.value = 0.9;
+          g.connect(oc.destination);
+          for (const e of G.log || []) { const t = e.t - shift; if (t >= 0 && t < sec) playSfx(oc, t, e.kind, g); }
+          const d = (await oc.startRendering()).getChannelData(0);
+          const i16 = new Int16Array(d.length);
+          for (let i = 0; i < d.length; i++) i16[i] = Math.max(-1, Math.min(1, d[i])) * 32767;
+          const u8 = new Uint8Array(i16.buffer);
+          let s = '';
+          for (let i = 0; i < u8.length; i += 0x8000) s += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000));
+          return btoa(s);
+        },
+        // 난이도 측정용
+        measure(n, ice, seed, runs = 200) { const p = makePuzzle(n, seed, ice); return { success: randomSuccess(p, runs, mulberry32(seed ^ 0x51ed)), smart: randomSuccess(p, 80, mulberry32(seed ^ 0x77), true), snow: p.cells.filter((c) => c === 'snow' || c === 'ice').length, ice: p.cells.filter((c) => c === 'ice').length }; },
+        pick(level, seed) { const s = levelSpec(level); const t0 = performance.now(); const p = pickPuzzle(s.n, s.ice, s.target, seed); return { n: p.n, success: p.success, ms: Math.round(performance.now() - t0) }; },
+      };
+      document.fonts.ready.then(() => { layout(); document.body.dataset.ready = '1'; });
+    } else {
+      layout();
+      paintMenu();
+      requestAnimationFrame(loop);
+    }
+  </script>
+</body>
+</html>

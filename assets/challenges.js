@@ -35,4 +35,12 @@ window.TAW_CHALLENGES = [
     date: '2026-11-23',
     desc: '소금 → 양념 → 담기 · 김장 장인(100포기) 될 수 있을까?',
   },
+  {
+    no: 5,
+    game: '첫눈 발자국 한붓그리기',
+    url: '/games/first-snow-steps/?c=5',
+    date: '2026-11-26',
+    desc: '7×7 눈밭 · 모든 칸을 한 번씩, 한붓에 다 밟을 수 있을까?',
+    puzzle: { gameKey: 'first-snow-steps', size: 7, seed: 36, ice: true }, // 눈 40칸 · 빙판 5칸, 구석부터 고르는 봇도 한 번에 5%만 성공
+  },
 ];
